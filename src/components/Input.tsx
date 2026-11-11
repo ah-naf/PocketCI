@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { FieldLabel } from './FieldLabel';
 
 type Props = TextInputProps & {
   label?: string;
+  labelHint?: string;
   error?: string;
   invalid?: boolean;
   secure?: boolean;
   mono?: boolean;
 };
 
-export function Input({ label, error, invalid, secure, mono = true, style, ...rest }: Props) {
+export function Input({ label, labelHint, error, invalid, secure, mono = true, style, ...rest }: Props) {
   const { tw, colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(Boolean(secure));
@@ -19,11 +21,7 @@ export function Input({ label, error, invalid, secure, mono = true, style, ...re
 
   return (
     <View style={tw`gap-1.5`}>
-      {label && (
-        <AppText variant="small" style={tw`font-sans-medium`}>
-          {label}
-        </AppText>
-      )}
+      {label && <FieldLabel label={label} hint={labelHint} />}
       <View>
         <TextInput
           autoCapitalize="none"

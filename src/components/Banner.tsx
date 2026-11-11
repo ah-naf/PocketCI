@@ -2,8 +2,10 @@ import { View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 
+const glyphs = { success: '✓', failed: '!', manual: 'i' };
+
 type Props = {
-  variant: 'success' | 'failed';
+  variant: keyof typeof glyphs;
   title: string;
   message?: string;
   detail?: string;
@@ -17,9 +19,9 @@ export function Banner({ variant, title, message, detail }: Props) {
       style={tw`flex-row gap-2.5 rounded-xl border border-${variant}/35 bg-${variant}/10 p-3`}
     >
       <AppText variant="title" tone={variant}>
-        {variant === 'success' ? '✓' : '!'}
+        {glyphs[variant]}
       </AppText>
-      <View style={tw`flex-1 gap-0.5`}>
+      <View style={tw`min-w-0 flex-1 gap-0.5`}>
         <AppText variant="small" tone="fg" style={tw`font-sans-semibold`}>
           {title}
         </AppText>

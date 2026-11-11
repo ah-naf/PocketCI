@@ -2,9 +2,9 @@ import { Pressable, View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 
-type Props = { title: string; subtitle?: string; onBack?: () => void };
+type Props = { title: string; subtitle?: string; monoTitle?: boolean; onBack?: () => void };
 
-export function Header({ title, subtitle, onBack }: Props) {
+export function Header({ title, subtitle, monoTitle, onBack }: Props) {
   const { tw } = useTheme();
   return (
     <View style={tw`min-h-14 flex-row items-center px-1.5 border-b border-line`}>
@@ -21,11 +21,11 @@ export function Header({ title, subtitle, onBack }: Props) {
         </Pressable>
       )}
       <View style={tw.style('min-w-0 flex-1 px-1.5 py-2', !onBack && 'pl-3.5')}>
-        <AppText variant="title" numberOfLines={1}>
+        <AppText variant="title" mono={monoTitle} numberOfLines={1} style={monoTitle ? tw`text-[15px]` : undefined}>
           {title}
         </AppText>
         {subtitle && (
-          <AppText variant="small" mono numberOfLines={1} style={tw`text-xs leading-4`}>
+          <AppText variant="small" mono={!monoTitle} numberOfLines={1} style={tw`text-xs leading-4`}>
             {subtitle}
           </AppText>
         )}
