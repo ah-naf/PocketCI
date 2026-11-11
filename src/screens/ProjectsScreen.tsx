@@ -2,14 +2,16 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { View } from 'react-native';
 import { fetchProjects } from '../api/projects';
 import { AppText } from '../components/AppText';
+import { IconButton } from '../components/IconButton';
 import { ListRow } from '../components/ListRow';
 import { Screen } from '../components/Screen';
 import { SectionHeader } from '../components/SectionHeader';
 import { SearchList } from '../components/SearchList';
-import { TextButton } from '../components/TextButton';
+
 import { useGitlabHost } from '../hooks/useGitlabHost';
 import { useRecentProjects } from '../hooks/useRecentProjects';
 import { useSearchPage } from '../hooks/useSearchPage';
+import { useThemeToggle } from '../hooks/useThemeToggle';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { rememberProject, type RecentProject } from '../storage/recentProjects';
 import { useTheme } from '../theme';
@@ -20,6 +22,7 @@ export function ProjectsScreen({ navigation }: Props) {
   const { tw } = useTheme();
   const host = useGitlabHost();
   const recent = useRecentProjects();
+  const themeToggle = useThemeToggle();
   const { search, setSearch, items, busy, error, refresh, loadMore } = useSearchPage(fetchProjects);
 
   function openProject(project: RecentProject) {
@@ -41,11 +44,16 @@ export function ProjectsScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <View style={tw`min-h-14 flex-row items-center justify-between border-b border-line pl-4 pr-1.5`}>
+      <View style={tw`min-h-14 flex-row items-center justify-between border-b border-line pl-4 pr-1`}>
         <AppText variant="small" mono numberOfLines={1} style={tw`flex-1 text-xs`}>
           {host}
         </AppText>
-        <TextButton label="Settings" onPress={() => navigation.navigate('Settings')} />
+        <IconButton
+          icon={themeToggle.nextScheme === 'light' ? 'sun' : 'moon'}
+          label={`Switch to ${themeToggle.nextScheme} theme`}
+          onPress={themeToggle.toggle}
+        />
+        <IconButton icon="sliders" label="Settings" onPress={() => navigation.navigate('Settings')} />
       </View>
       <View style={tw`border-b border-line px-4 pb-3.5 pt-6`}>
         <AppText variant="display">Projects</AppText>
