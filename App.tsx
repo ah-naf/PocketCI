@@ -6,9 +6,11 @@ import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono/500Me
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { Appearance } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { loadSettings } from './src/storage/secure';
+import { loadThemePreference } from './src/storage/themePreference';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -21,8 +23,11 @@ export default function App() {
   const [hasToken, setHasToken] = useState<boolean | null>(null);
 
   useEffect(() => {
-    loadSettings().then(
-      ({ token }) => setHasToken(token !== ''),
+    Promise.all([loadSettings(), loadThemePreference()]).then(
+      ([{ token }, theme]) => {
+        Appearance.setColorScheme(theme ?? 'unspecified');
+        setHasToken(token !== '');
+      },
       () => setHasToken(false),
     );
   }, []);
