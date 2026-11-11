@@ -74,4 +74,6 @@ export const terminal = {
   success: '#3FCF8E',
   error: '#FF9AA2',
   errorBackground: '#F0616D29',
+  matchBackground: '#C6F43224',
+  currentMatchBackground: '#C6F4325C',
 };

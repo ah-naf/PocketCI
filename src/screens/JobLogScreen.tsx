@@ -7,15 +7,17 @@ import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { NoticeBar } from '../components/NoticeBar';
 import { ErrorView } from '../components/ErrorView';
+import { IconButton } from '../components/IconButton';
 import { LiveBadge } from '../components/LiveBadge';
 import { LoadingRow } from '../components/LoadingRow';
+import { LogSearchBar } from '../components/LogSearchBar';
 import { LogView } from '../components/LogView';
 import { Screen } from '../components/Screen';
 import { StatusBadge } from '../components/StatusBadge';
-import { TextButton } from '../components/TextButton';
 import { useAsync } from '../hooks/useAsync';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useJobLog } from '../hooks/useJobLog';
+import { useLogNavigation } from '../hooks/useLogNavigation';
 import { useNow } from '../hooks/useNow';
 import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -38,6 +40,7 @@ export function JobLogScreen({ navigation, route }: Props) {
   const focused = useIsFocused();
   const [showFull, setShowFull] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const loadJob = useCallback(() => provider.getJob(project, jobId), [provider, project, jobId]);
   const job = useAsync(loadJob);
@@ -63,6 +66,12 @@ export function JobLogScreen({ navigation, route }: Props) {
   const allLines = useMemo(() => provider.cleanLog(log.text), [provider, log.text]);
   const skipped = showFull ? 0 : Math.max(0, allLines.length - MAX_LOG_LINES);
   const lines = useMemo(() => toLogLines(allLines, skipped), [allLines, skipped]);
+  const nav = useLogNavigation(lines);
+
+  function toggleSearch() {
+    if (searchOpen) nav.reset();
+    setSearchOpen(!searchOpen);
+  }
 
   const playManualJob = () =>
     confirmAction(
@@ -123,12 +132,37 @@ export function JobLogScreen({ navigation, route }: Props) {
       headerRight={
         <>
           {live && provider.capabilities.liveLogs && <LiveBadge />}
-          {!provider.capabilities.liveLogs && <TextButton label="Refresh" onPress={log.reload} />}
-          <TextButton label={copied ? 'Copied' : 'Copy'} onPress={copyLog} />
-          <TextButton label="Bottom" onPress={scroll.scrollToBottom} />
+          {!provider.capabilities.liveLogs && <IconButton icon="refresh" label="Refresh log" onPress={log.reload} />}
+          <IconButton
+            icon="search"
+            label="Search log"
+            color={searchOpen ? 'accent' : 'muted'}
+            onPress={toggleSearch}
+          />
+          <IconButton
+            icon={copied ? 'check' : 'copy'}
+            label="Copy log"
+            color={copied ? 'success' : 'muted'}
+            onPress={copyLog}
+          />
+          <IconButton icon="arrowDown" label="Jump to bottom" onPress={scroll.scrollToBottom} />
         </>
       }
     >
+      {searchOpen && (
+        <LogSearchBar
+          query={nav.query}
+          onChangeQuery={nav.setQuery}
+          mode={nav.mode}
+          position={nav.position}
+          count={nav.count}
+          errorCount={nav.errorCount}
+          truncated={skipped > 0}
+          onPrevious={nav.previous}
+          onNext={nav.next}
+          onJumpToError={nav.jumpToError}
+        />
+      )}
       {(status === 'failed' || wasCanceled) && (
         <NoticeBar
           text={wasCanceled ? 'This job was canceled.' : 'This job failed.'}
@@ -155,7 +189,12 @@ export function JobLogScreen({ navigation, route }: Props) {
             No output yet.
           </AppText>
         )}
-        <LogView lines={lines} scroll={scroll} />
+        <LogView
+          lines={lines}
+          scroll={scroll}
+          highlighted={searchOpen ? nav.highlighted : undefined}
+          focusLine={searchOpen ? nav.focusLine : undefined}
+        />
         {live && !scroll.atBottom && (
           <Button
             label="Scroll to bottom"
