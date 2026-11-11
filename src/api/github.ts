@@ -75,9 +75,12 @@ export function fetchRepoBranches(fullName: string, query: string, page: number)
   return fetchFiltered<GithubBranch>(`/repos/${fullName}/branches`, {}, page, query, (branch) => branch.name);
 }
 
-export async function fetchRuns(fullName: string, branch: string) {
-  const query = buildQuery({ branch, per_page: 20 });
-  return (await githubGetJson<{ workflow_runs: GithubRun[] }>(`/repos/${fullName}/actions/runs${query}`)).workflow_runs;
+export function fetchRuns(fullName: string, branch: string, status: string | undefined, page: number) {
+  const query = buildQuery({ branch, status, per_page: 20, page });
+  return githubGetPage<GithubRun, { workflow_runs: GithubRun[] }>(
+    `/repos/${fullName}/actions/runs${query}`,
+    (body) => body.workflow_runs,
+  );
 }
 
 export function fetchRun(fullName: string, runId: string) {
@@ -128,6 +131,18 @@ export async function fetchWorkflowRuns(fullName: string, workflowFile: string, 
 
 export async function forceCancelWorkflowRun(fullName: string, runId: string) {
   await githubRequest(`/repos/${fullName}/actions/runs/${runId}/force-cancel`, { method: 'POST' });
+}
+
+export async function rerunRun(fullName: string, runId: string) {
+  await githubRequest(`/repos/${fullName}/actions/runs/${runId}/rerun`, { method: 'POST' });
+}
+
+export async function rerunFailedJobs(fullName: string, runId: string) {
+  await githubRequest(`/repos/${fullName}/actions/runs/${runId}/rerun-failed-jobs`, { method: 'POST' });
+}
+
+export async function rerunJob(fullName: string, jobId: string) {
+  await githubRequest(`/repos/${fullName}/actions/jobs/${jobId}/rerun`, { method: 'POST' });
 }
 
 export async function cancelWorkflowRun(fullName: string, runId: string) {

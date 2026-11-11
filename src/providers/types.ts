@@ -2,6 +2,8 @@ export type ProviderId = 'gitlab' | 'github';
 
 export type RunStatus = string;
 
+export type RunFilter = 'all' | 'running' | 'failed' | 'success' | 'canceled';
+
 export type Page<T> = { items: T[]; nextPage: number | null };
 
 export type ProjectRef = { providerId: ProviderId; key: string; name: string; path: string };

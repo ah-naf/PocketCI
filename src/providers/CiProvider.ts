@@ -9,6 +9,7 @@ import type {
   ProviderLabels,
   ProviderSetup,
   Run,
+  RunFilter,
   RunOptions,
   RunSummary,
   StartRunRequest,
@@ -33,7 +34,12 @@ export abstract class CiProvider {
     branch: string,
     request: StartRunRequest,
   ): Promise<{ runId: string | null }>;
-  abstract listRuns(project: ProjectRef, branch: string): Promise<RunSummary[]>;
+  abstract listRuns(
+    project: ProjectRef,
+    branch: string,
+    filter: RunFilter,
+    page: number,
+  ): Promise<Page<RunSummary>>;
   abstract getRun(project: ProjectRef, runId: string): Promise<Run>;
   abstract listJobs(project: ProjectRef, runId: string): Promise<Job[]>;
   abstract getJob(project: ProjectRef, jobId: string): Promise<Job>;
@@ -42,6 +48,9 @@ export abstract class CiProvider {
   abstract cleanLog(raw: string): string[];
 
   abstract cancelRun(project: ProjectRef, runId: string): Promise<void>;
+
+  abstract retryRun(project: ProjectRef, runId: string): Promise<void>;
+  abstract retryJob(project: ProjectRef, jobId: string): Promise<void>;
 
   forceCancelRun(project: ProjectRef, runId: string): Promise<void> {
     return Promise.reject(new Error(`Force cancel is not supported (${project.key}, ${runId})`));

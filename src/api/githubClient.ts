@@ -32,10 +32,11 @@ export async function githubGetJson<T>(path: string): Promise<T> {
   return JSON.parse(text) as T;
 }
 
-export async function githubGetPage<T>(path: string): Promise<Page<T>> {
+export async function githubGetPage<T, Body = T[]>(path: string, pick?: (body: Body) => T[]): Promise<Page<T>> {
   const { text, headers } = await githubRequest(path);
+  const body = JSON.parse(text) as Body;
   const next = /<[^>]*[?&]page=(\d+)[^>]*>;\s*rel="next"/.exec(headers.get('link') ?? '');
-  return { items: JSON.parse(text) as T[], nextPage: next ? Number(next[1]) : null };
+  return { items: pick ? pick(body) : (body as unknown as T[]), nextPage: next ? Number(next[1]) : null };
 }
 
 export async function fetchGithubLogin(token: string) {

@@ -12,6 +12,9 @@ import {
   fetchRuns,
   fetchWorkflowFiles,
   fetchWorkflowRuns,
+  rerunFailedJobs,
+  rerunRun,
+  rerunJob,
   type GithubJob,
   type GithubRepo,
   type GithubRun,
@@ -22,7 +25,15 @@ import { parseWorkflowTarget } from '../api/githubWorkflows';
 import { cleanGithubLog } from '../utils/githubLog';
 import { mapGithubStatus } from '../utils/githubStatus';
 import { CiProvider } from './CiProvider';
-import type { Credentials, Job, ProjectRef, Run, RunOptions, RunTarget, StartRunRequest } from './types';
+import type { Credentials, Job, ProjectRef, Run, RunFilter, RunOptions, RunTarget, StartRunRequest } from './types';
+
+const GITHUB_STATUS: Record<RunFilter, string | undefined> = {
+  all: undefined,
+  running: 'in_progress',
+  failed: 'failure',
+  success: 'success',
+  canceled: 'cancelled',
+};
 
 const toProjectRef = (repo: GithubRepo): ProjectRef => ({
   providerId: 'github',
@@ -160,15 +171,18 @@ export class GithubProvider extends CiProvider {
     return null;
   }
 
-  async listRuns(project: ProjectRef, branch: string) {
-    const runs = await fetchRuns(project.key, branch);
-    return runs.map((run) => ({
-      id: String(run.id),
-      title: run.name ?? '',
-      status: mapGithubStatus(run.status, run.conclusion),
-      createdAt: run.created_at,
-      updatedAt: run.updated_at,
-    }));
+  async listRuns(project: ProjectRef, branch: string, filter: RunFilter, page: number) {
+    const result = await fetchRuns(project.key, branch, GITHUB_STATUS[filter], page);
+    return {
+      ...result,
+      items: result.items.map((run) => ({
+        id: String(run.id),
+        title: run.name ?? '',
+        status: mapGithubStatus(run.status, run.conclusion),
+        createdAt: run.created_at,
+        updatedAt: run.updated_at,
+      })),
+    };
   }
 
   async getRun(project: ProjectRef, runId: string) {
@@ -197,6 +211,16 @@ export class GithubProvider extends CiProvider {
 
   cleanLog(raw: string) {
     return cleanGithubLog(raw);
+  }
+
+  async retryRun(project: ProjectRef, runId: string) {
+    const { conclusion } = await fetchRun(project.key, runId);
+    if (conclusion === 'cancelled') await rerunRun(project.key, runId);
+    else await rerunFailedJobs(project.key, runId);
+  }
+
+  async retryJob(project: ProjectRef, jobId: string) {
+    await rerunJob(project.key, jobId);
   }
 
   async cancelRun(project: ProjectRef, runId: string) {

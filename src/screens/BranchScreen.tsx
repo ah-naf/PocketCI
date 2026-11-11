@@ -9,6 +9,7 @@ import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { CustomVariableRows } from '../components/CustomVariableRows';
 import { ErrorView } from '../components/ErrorView';
+import { FilterChips } from '../components/FilterChips';
 import { LoadingRow } from '../components/LoadingRow';
 import { PickerField } from '../components/PickerField';
 import { PipelineRow } from '../components/PipelineRow';
@@ -17,13 +18,15 @@ import { Screen } from '../components/Screen';
 import { SectionHeader } from '../components/SectionHeader';
 import { VariableFields } from '../components/VariableFields';
 import { useAsync } from '../hooks/useAsync';
+import { usePaginated } from '../hooks/usePaginated';
 import { usePipelineForm } from '../hooks/usePipelineForm';
 import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
+import type { RunFilter } from '../providers/types';
 import { useTheme } from '../theme';
 import { formatPipelineDuration, formatRelativeTime } from '../utils/format';
-import { isPipelineActive } from '../utils/status';
+import { isPipelineActive, RUN_FILTERS } from '../utils/status';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Branch'>;
 
@@ -39,13 +42,18 @@ export function BranchScreen({ navigation, route }: Props) {
   const [runError, setRunError] = useState<unknown>();
   const [targetId, setTargetId] = useState<string>();
   const [startedNotice, setStartedNotice] = useState(false);
+  const [runFilter, setRunFilter] = useState<RunFilter>('all');
 
   const loadOptions = useCallback(() => provider.getRunOptions(project, branch), [provider, project, branch]);
-  const loadRuns = useCallback(() => provider.listRuns(project, branch), [provider, project, branch]);
+  const fetchRunsPage = useCallback(
+    (page: number) => provider.listRuns(project, branch, runFilter, page),
+    [provider, project, branch, runFilter],
+  );
   const options = useAsync(loadOptions);
-  const runs = useAsync(loadRuns);
+  const runs = usePaginated(fetchRunsPage);
   const focused = useIsFocused();
-  const hasActiveRun = runs.data?.some((item) => isPipelineActive(item.status)) ?? false;
+  const hasActiveRun = runs.items.some((item) => isPipelineActive(item.status));
+  const filterLabel = RUN_FILTERS.find((option) => option.id === runFilter)?.label.toLowerCase();
 
   usePoll(runs.poll, RUNS_POLL_INTERVAL_MS, focused && (hasActiveRun || startedNotice));
   useFocusEffect(
@@ -73,6 +81,7 @@ export function BranchScreen({ navigation, route }: Props) {
     setSubmitting(true);
     setRunError(undefined);
     setStartedNotice(false);
+    setRunFilter('all');
     try {
       const started = await provider.startRun(project, branch, { targetId: target.id, inputs: form.entries });
       runs.poll();
@@ -98,10 +107,10 @@ export function BranchScreen({ navigation, route }: Props) {
       scroll
       refreshControl={
         <AppRefreshControl
-          refreshing={options.refreshing || runs.refreshing}
+          refreshing={options.refreshing || runs.busy === 'refresh'}
           onRefresh={() => {
             options.reload();
-            runs.reload();
+            runs.refresh();
           }}
         />
       }
@@ -159,14 +168,16 @@ export function BranchScreen({ navigation, route }: Props) {
       </View>
 
       <SectionHeader title={`Recent ${runsLabel}`} bordered />
-      {runs.loading && <LoadingRow label={`Loading ${runsLabel}`} />}
-      {runs.error !== undefined && <ErrorView error={runs.error} onRetry={runs.reload} />}
-      {runs.data?.length === 0 && (
+      <FilterChips options={RUN_FILTERS} value={runFilter} onChange={(id) => setRunFilter(id as RunFilter)} />
+      {runs.busy === 'initial' && <LoadingRow label={`Loading ${runsLabel}`} />}
+      {runs.busy === 'idle' && runs.error == null && runs.items.length === 0 && (
         <AppText variant="small" style={tw`p-4`}>
-          No {runsLabel} on this branch yet.
+          {runFilter === 'all'
+            ? `No ${runsLabel} on this branch yet.`
+            : `No ${filterLabel} ${runsLabel} on this branch.`}
         </AppText>
       )}
-      {runs.data?.map((item) => (
+      {runs.items.map((item) => (
         <PipelineRow
           key={item.id}
           id={item.id}
@@ -177,6 +188,16 @@ export function BranchScreen({ navigation, route }: Props) {
           onPress={() => openRun(item.id)}
         />
       ))}
+      {runs.error != null && <ErrorView error={runs.error} onRetry={runs.refresh} />}
+      {runs.hasMore && (
+        <Button
+          variant="ghost"
+          label="Load more"
+          onPress={runs.loadMore}
+          loading={runs.busy === 'more'}
+          style={tw`m-4`}
+        />
+      )}
 
       <RunConfirmDialog
         visible={confirmOpen}

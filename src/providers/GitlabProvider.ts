@@ -8,6 +8,8 @@ import {
   fetchPipeline,
   fetchPipelines,
   playJob,
+  retryJob,
+  retryPipeline,
   type Job as GitlabJob,
   type Pipeline,
 } from '../api/pipelines';
@@ -17,7 +19,15 @@ import { fetchCurrentUser } from '../api/user';
 import { DEFAULT_BASE_URL } from '../storage/secure';
 import { parseLog } from '../utils/log';
 import { CiProvider } from './CiProvider';
-import type { Job, Notice, ProjectRef, Run, RunOptions, StartRunRequest } from './types';
+import type { Job, Notice, ProjectRef, Run, RunFilter, RunOptions, StartRunRequest } from './types';
+
+const GITLAB_STATUS: Record<RunFilter, string | undefined> = {
+  all: undefined,
+  running: 'running',
+  failed: 'failed',
+  success: 'success',
+  canceled: 'canceled',
+};
 
 const toProjectRef = (project: Project): ProjectRef => ({
   providerId: 'gitlab',
@@ -120,15 +130,18 @@ export class GitlabProvider extends CiProvider {
     return { runId: String(created.id) };
   }
 
-  async listRuns(project: ProjectRef, branch: string) {
-    const pipelines = await fetchPipelines(Number(project.key), branch);
-    return pipelines.map(({ id, status, created_at, updated_at }) => ({
-      id: String(id),
-      title: '',
-      status,
-      createdAt: created_at,
-      updatedAt: updated_at,
-    }));
+  async listRuns(project: ProjectRef, branch: string, filter: RunFilter, page: number) {
+    const result = await fetchPipelines(Number(project.key), branch, GITLAB_STATUS[filter], page);
+    return {
+      ...result,
+      items: result.items.map(({ id, status, created_at, updated_at }) => ({
+        id: String(id),
+        title: '',
+        status,
+        createdAt: created_at,
+        updatedAt: updated_at,
+      })),
+    };
   }
 
   async getRun(project: ProjectRef, runId: string) {
@@ -154,6 +167,14 @@ export class GitlabProvider extends CiProvider {
 
   async cancelRun(project: ProjectRef, runId: string) {
     await cancelPipeline(Number(project.key), Number(runId));
+  }
+
+  async retryRun(project: ProjectRef, runId: string) {
+    await retryPipeline(Number(project.key), Number(runId));
+  }
+
+  async retryJob(project: ProjectRef, jobId: string) {
+    await retryJob(Number(project.key), Number(jobId));
   }
 
   async playJob(project: ProjectRef, jobId: string) {

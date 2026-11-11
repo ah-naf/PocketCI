@@ -1,4 +1,4 @@
-import { buildQuery, getJson } from './gitlabClient';
+import { buildQuery, getJson, getPage } from './gitlabClient';
 
 export type PipelineSummary = {
   id: number;
@@ -32,9 +32,9 @@ export type Job = {
 
 export type CreatedPipeline = { id: number; status: string; web_url: string };
 
-export function fetchPipelines(projectId: number, branch: string) {
-  const query = buildQuery({ ref: branch, per_page: 20, order_by: 'id', sort: 'desc' });
-  return getJson<PipelineSummary[]>(`/projects/${projectId}/pipelines${query}`);
+export function fetchPipelines(projectId: number, branch: string, status: string | undefined, page: number) {
+  const query = buildQuery({ ref: branch, status, per_page: 20, order_by: 'id', sort: 'desc', page });
+  return getPage<PipelineSummary>(`/projects/${projectId}/pipelines${query}`);
 }
 
 export function fetchPipeline(projectId: number, pipelineId: number) {
@@ -52,6 +52,14 @@ export function fetchJob(projectId: number, jobId: number) {
 
 export function cancelPipeline(projectId: number, pipelineId: number) {
   return getJson<Pipeline>(`/projects/${projectId}/pipelines/${pipelineId}/cancel`, { method: 'POST' });
+}
+
+export function retryPipeline(projectId: number, pipelineId: number) {
+  return getJson<Pipeline>(`/projects/${projectId}/pipelines/${pipelineId}/retry`, { method: 'POST' });
+}
+
+export function retryJob(projectId: number, jobId: number) {
+  return getJson<Job>(`/projects/${projectId}/jobs/${jobId}/retry`, { method: 'POST' });
 }
 
 export function playJob(projectId: number, jobId: number) {
