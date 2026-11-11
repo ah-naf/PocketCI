@@ -55,20 +55,29 @@ export function RunConfirmDialog({
           </View>
           <View style={tw`gap-1.5`}>
             <AppText variant="label">Variables · {entries.length}</AppText>
-            <ScrollView style={tw`max-h-60 rounded-xl border border-line bg-bg`} contentContainerStyle={tw`gap-1 p-2.5`}>
+            <ScrollView style={tw`max-h-64 overflow-hidden rounded-xl border border-line bg-bg`}>
               {entries.length === 0 && (
-                <AppText variant="caption" mono>
+                <AppText variant="caption" mono style={tw`p-3`}>
                   No variables
                 </AppText>
               )}
-              {entries.map(({ key, value }) => (
-                <View key={key} style={tw`flex-row gap-3`}>
-                  <AppText variant="caption" mono tone="muted" style={tw`shrink-0 text-xs leading-[18px]`}>
+              {entries.map(({ key, value }, index) => (
+                <View
+                  key={key}
+                  style={tw.style('gap-0.5 px-3 py-2.5', index < entries.length - 1 && 'border-b border-line')}
+                >
+                  <AppText variant="caption" mono tone="muted" style={tw`text-[11px] tracking-wide`}>
                     {key}
                   </AppText>
-                  <AppText variant="caption" mono tone="fg" style={tw`flex-1 text-xs leading-[18px]`}>
-                    {value}
-                  </AppText>
+                  {value === '' ? (
+                    <AppText variant="caption" tone="dim" style={tw`text-[13px] italic`}>
+                      empty
+                    </AppText>
+                  ) : (
+                    <AppText mono tone="fg" style={tw`text-[13px] leading-[19px]`}>
+                      {value}
+                    </AppText>
+                  )}
                 </View>
               ))}
             </ScrollView>
