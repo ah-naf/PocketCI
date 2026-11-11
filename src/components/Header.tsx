@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { Icon } from './Icon';
 
 type Props = {
   title: string;
@@ -22,9 +23,7 @@ export function Header({ title, subtitle, monoTitle, right, onBack }: Props) {
           onPress={onBack}
           style={tw`w-11 h-11 items-center justify-center`}
         >
-          <AppText variant="heading" tone="muted">
-            ‹
-          </AppText>
+          <Icon name="back" />
         </Pressable>
       )}
       <View style={tw.style('min-w-0 flex-1 px-1.5 py-2', !onBack && 'pl-3.5')}>

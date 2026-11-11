@@ -3,6 +3,7 @@ import type { Job } from '../providers/types';
 import { useTheme } from '../theme';
 import { formatJobDuration } from '../utils/format';
 import { AppText } from './AppText';
+import { Icon } from './Icon';
 import { JobStatusIcon } from './JobStatusIcon';
 import { StatusBadge } from './StatusBadge';
 
@@ -42,9 +43,7 @@ export function JobRow({ job, now, onPress }: Props) {
           {waiting ? 'pending' : formatJobDuration(job, now)}
         </AppText>
       )}
-      <AppText variant="heading" tone="dim">
-        ›
-      </AppText>
+      <Icon name="chevronRight" color="dim" size={18} />
     </Pressable>
   );
 }

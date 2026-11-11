@@ -3,6 +3,7 @@ import type { ProviderId } from '../providers/types';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { BottomSheet } from './BottomSheet';
+import { Icon } from './Icon';
 
 type Option = { id: ProviderId; displayName: string };
 
@@ -29,7 +30,7 @@ export function ProviderSwitchSheet({ visible, options, active, onSelect, onClos
           <AppText tone={id === active ? 'accent' : 'fg'} style={tw`font-sans-semibold`}>
             {displayName}
           </AppText>
-          {id === active && <AppText tone="accent">✓</AppText>}
+          {id === active && <Icon name="check" color="accent" />}
         </Pressable>
       ))}
     </BottomSheet>

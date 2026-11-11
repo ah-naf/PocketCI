@@ -4,6 +4,7 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { BottomSheet } from './BottomSheet';
 import { FieldLabel } from './FieldLabel';
+import { Icon } from './Icon';
 
 type Props = {
   label: string;
@@ -30,9 +31,7 @@ export function PickerField({ label, hint, value, options, onChange, isOptionDis
         <AppText mono numberOfLines={1} style={tw`flex-1 text-[13px]`}>
           {value}
         </AppText>
-        <AppText variant="small" tone="dim">
-          ▾
-        </AppText>
+        <Icon name="chevronDown" color="dim" />
       </Pressable>
       <BottomSheet visible={open} onClose={() => setOpen(false)}>
         <AppText variant="heading">{label}</AppText>
@@ -60,7 +59,7 @@ export function PickerField({ label, hint, value, options, onChange, isOptionDis
                   </AppText>
                   {reason !== undefined && <AppText variant="caption">{reason}</AppText>}
                 </View>
-                {option === value && <AppText tone="accent">✓</AppText>}
+                {option === value && <Icon name="check" color="accent" />}
               </Pressable>
             );
           })}

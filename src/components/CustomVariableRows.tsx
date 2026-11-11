@@ -2,6 +2,7 @@ import { Pressable, View } from 'react-native';
 import type { CustomVariable } from '../hooks/usePipelineForm';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { Icon } from './Icon';
 import { Button } from './Button';
 import { FieldLabel } from './FieldLabel';
 import { Input } from './Input';
@@ -45,9 +46,7 @@ export function CustomVariableRows({ rows, errors, onAdd, onChange, onRemove }: 
               onPress={() => onRemove(row.id)}
               style={tw`-mr-2.5 h-11 w-11 items-center justify-center`}
             >
-              <AppText variant="small" tone="muted">
-                ✕
-              </AppText>
+              <Icon name="close" size={18} />
             </Pressable>
           </View>
           {errors[row.id] && (

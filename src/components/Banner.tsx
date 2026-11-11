@@ -1,11 +1,16 @@
 import { View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { Icon, type IconName } from './Icon';
 
-const glyphs = { success: '✓', failed: '!', manual: 'i' };
+const icons: Record<'success' | 'failed' | 'manual', IconName> = {
+  success: 'check',
+  failed: 'warning',
+  manual: 'info',
+};
 
 type Props = {
-  variant: keyof typeof glyphs;
+  variant: keyof typeof icons;
   title: string;
   message?: string;
   detail?: string;
@@ -18,9 +23,9 @@ export function Banner({ variant, title, message, detail }: Props) {
       accessibilityRole={variant === 'failed' ? 'alert' : undefined}
       style={tw`flex-row gap-2.5 rounded-xl border border-${variant}/35 bg-${variant}/10 p-3`}
     >
-      <AppText variant="title" tone={variant}>
-        {glyphs[variant]}
-      </AppText>
+      <View style={tw`mt-px`}>
+        <Icon name={icons[variant]} color={variant} size={18} />
+      </View>
       <View style={tw`min-w-0 flex-1 gap-0.5`}>
         <AppText variant="small" tone="fg" style={tw`font-sans-semibold`}>
           {title}

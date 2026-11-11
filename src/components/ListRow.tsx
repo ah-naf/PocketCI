@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { Icon } from './Icon';
 
 type Props = {
   title: string;
@@ -52,9 +53,7 @@ export function ListRow({ title, subtitle, tag, accentTag, monoTitle, onPress, o
           </AppText>
         </View>
       )}
-      <AppText variant="heading" tone="dim">
-        ›
-      </AppText>
+      <Icon name="chevronRight" color="dim" size={18} />
     </Pressable>
   );
 }

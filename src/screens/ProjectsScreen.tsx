@@ -2,6 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { AppText } from '../components/AppText';
+import { Icon } from '../components/Icon';
 import { IconButton } from '../components/IconButton';
 import { ListRow } from '../components/ListRow';
 import { ProviderSwitchSheet } from '../components/ProviderSwitchSheet';
@@ -73,8 +74,9 @@ export function ProjectsScreen({ navigation }: Props) {
           style={tw`h-9 flex-row items-center gap-1.5 rounded-full border border-line px-3`}
         >
           <AppText variant="small" tone="accent" style={tw`font-sans-semibold`}>
-            {provider.displayName} ▾
+            {provider.displayName}
           </AppText>
+          <Icon name="chevronDown" color="accent" size={16} />
         </Pressable>
         <AppText variant="small" mono numberOfLines={1} style={tw`flex-1 text-xs`}>
           {host}
