@@ -1,0 +1,60 @@
+import { useState } from 'react';
+import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
+import { useTheme } from '../theme';
+import { AppText } from './AppText';
+
+type Props = TextInputProps & {
+  label: string;
+  error?: string;
+  invalid?: boolean;
+  secure?: boolean;
+  mono?: boolean;
+};
+
+export function Input({ label, error, invalid, secure, mono = true, style, ...rest }: Props) {
+  const { tw, colors } = useTheme();
+  const [focused, setFocused] = useState(false);
+  const [hidden, setHidden] = useState(Boolean(secure));
+  const borderColor = error || invalid ? 'border-failed' : focused ? 'border-accent' : 'border-line';
+
+  return (
+    <View style={tw`gap-1.5`}>
+      <AppText variant="small" style={tw`font-sans-medium`}>
+        {label}
+      </AppText>
+      <View>
+        <TextInput
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholderTextColor={colors.dim}
+          {...rest}
+          secureTextEntry={hidden}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          style={[
+            tw.style(
+              'h-12 rounded-xl border bg-card px-3 text-[13px] text-fg',
+              mono ? 'font-mono' : 'font-sans',
+              borderColor,
+              secure && 'pr-16',
+            ),
+            style,
+          ]}
+        />
+        {secure && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={hidden ? 'Show token' : 'Hide token'}
+            onPress={() => setHidden(!hidden)}
+            style={tw`absolute right-0.5 top-0.5 h-11 justify-center px-3`}
+          >
+            <AppText variant="small" tone="accent" style={tw`font-sans-semibold`}>
+              {hidden ? 'Show' : 'Hide'}
+            </AppText>
+          </Pressable>
+        )}
+      </View>
+      {error && <AppText variant="caption" tone="failed">{error}</AppText>}
+    </View>
+  );
+}
