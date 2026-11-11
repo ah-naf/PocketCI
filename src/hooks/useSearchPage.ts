@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { Page } from '../api/gitlabClient';
+import type { Page } from '../providers/types';
 import { useDebounce } from './useDebounce';
 import { usePaginated } from './usePaginated';
 

@@ -1,5 +1,8 @@
 import { loadSettings, type Settings } from '../storage/secure';
+import type { Page } from '../providers/types';
 import { GitlabError } from './errors';
+
+export type { Page };
 
 const TIMEOUT_MS = 15000;
 
@@ -77,8 +80,6 @@ export async function getJson<T>(path: string, options?: RequestOptions): Promis
   const { text } = await gitlabRequest(path, options);
   return JSON.parse(text) as T;
 }
-
-export type Page<T> = { items: T[]; nextPage: number | null };
 
 export async function getPage<T>(path: string, options?: RequestOptions): Promise<Page<T>> {
   const { text, headers } = await gitlabRequest(path, options);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Page } from '../api/gitlabClient';
+import type { Page } from '../providers/types';
 
 export type Busy = 'initial' | 'refresh' | 'more' | 'idle';
 
