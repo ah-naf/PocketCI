@@ -2,6 +2,7 @@ import { buildQuery, getJson, getPage } from './gitlabClient';
 
 export type PipelineSummary = {
   id: number;
+  ref: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -32,7 +33,7 @@ export type Job = {
 
 export type CreatedPipeline = { id: number; status: string; web_url: string };
 
-export function fetchPipelines(projectId: number, branch: string, status: string | undefined, page: number) {
+export function fetchPipelines(projectId: number, branch: string | undefined, status: string | undefined, page: number) {
   const query = buildQuery({ ref: branch, status, per_page: 20, order_by: 'id', sort: 'desc', page });
   return getPage<PipelineSummary>(`/projects/${projectId}/pipelines${query}`);
 }

@@ -171,13 +171,14 @@ export class GithubProvider extends CiProvider {
     return null;
   }
 
-  async listRuns(project: ProjectRef, branch: string, filter: RunFilter, page: number) {
-    const result = await fetchRuns(project.key, branch, GITHUB_STATUS[filter], page);
+  async listRuns(project: ProjectRef, branch: string | null, filter: RunFilter, page: number) {
+    const result = await fetchRuns(project.key, branch ?? undefined, GITHUB_STATUS[filter], page);
     return {
       ...result,
       items: result.items.map((run) => ({
         id: String(run.id),
         title: run.name ?? '',
+        ref: run.head_branch ?? '',
         status: mapGithubStatus(run.status, run.conclusion),
         createdAt: run.created_at,
         updatedAt: run.updated_at,

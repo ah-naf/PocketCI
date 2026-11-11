@@ -75,7 +75,7 @@ export function fetchRepoBranches(fullName: string, query: string, page: number)
   return fetchFiltered<GithubBranch>(`/repos/${fullName}/branches`, {}, page, query, (branch) => branch.name);
 }
 
-export function fetchRuns(fullName: string, branch: string, status: string | undefined, page: number) {
+export function fetchRuns(fullName: string, branch: string | undefined, status: string | undefined, page: number) {
   const query = buildQuery({ branch, status, per_page: 20, page });
   return githubGetPage<GithubRun, { workflow_runs: GithubRun[] }>(
     `/repos/${fullName}/actions/runs${query}`,

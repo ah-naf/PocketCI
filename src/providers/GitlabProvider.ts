@@ -130,13 +130,14 @@ export class GitlabProvider extends CiProvider {
     return { runId: String(created.id) };
   }
 
-  async listRuns(project: ProjectRef, branch: string, filter: RunFilter, page: number) {
-    const result = await fetchPipelines(Number(project.key), branch, GITLAB_STATUS[filter], page);
+  async listRuns(project: ProjectRef, branch: string | null, filter: RunFilter, page: number) {
+    const result = await fetchPipelines(Number(project.key), branch ?? undefined, GITLAB_STATUS[filter], page);
     return {
       ...result,
-      items: result.items.map(({ id, status, created_at, updated_at }) => ({
+      items: result.items.map(({ id, ref, status, created_at, updated_at }) => ({
         id: String(id),
         title: '',
+        ref,
         status,
         createdAt: created_at,
         updatedAt: updated_at,

@@ -36,7 +36,7 @@ export abstract class CiProvider {
   ): Promise<{ runId: string | null }>;
   abstract listRuns(
     project: ProjectRef,
-    branch: string,
+    branch: string | null,
     filter: RunFilter,
     page: number,
   ): Promise<Page<RunSummary>>;

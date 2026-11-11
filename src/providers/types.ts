@@ -27,6 +27,7 @@ export type StartRunRequest = { targetId: string; inputs: { key: string; value: 
 export type RunSummary = {
   id: string;
   title: string;
+  ref: string;
   status: RunStatus;
   createdAt: string;
   updatedAt: string;
