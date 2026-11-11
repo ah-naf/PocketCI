@@ -48,6 +48,7 @@ const toRun = (pipeline: Pipeline): Run => ({
   finishedAt: pipeline.finished_at,
   durationSeconds: pipeline.duration,
   triggeredBy: pipeline.user ? pipeline.user.name || pipeline.user.username : null,
+  triggeredByAvatar: pipeline.user?.avatar_url ?? null,
   source: pipeline.source,
   commitTitle: null,
 });
@@ -89,7 +90,8 @@ export class GitlabProvider extends CiProvider {
   };
 
   async verifyCredentials(credentials: { baseUrl: string; token: string }) {
-    return (await fetchCurrentUser(credentials)).username;
+    const user = await fetchCurrentUser(credentials);
+    return { username: user.username, name: user.name, avatarUrl: user.avatar_url };
   }
 
   async listProjects(query: string, page: number) {

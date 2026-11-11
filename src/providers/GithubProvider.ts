@@ -19,7 +19,7 @@ import {
   type GithubRepo,
   type GithubRun,
 } from '../api/github';
-import { fetchGithubLogin, githubRequest } from '../api/githubClient';
+import { fetchGithubUser, githubRequest } from '../api/githubClient';
 import { ApiError } from '../api/errors';
 import { parseWorkflowTarget } from '../api/githubWorkflows';
 import { cleanGithubLog } from '../utils/githubLog';
@@ -53,6 +53,7 @@ const toRun = (run: GithubRun): Run => ({
   finishedAt: run.status === 'completed' ? run.updated_at : null,
   durationSeconds: null,
   triggeredBy: run.actor?.login ?? null,
+  triggeredByAvatar: run.actor?.avatar_url ?? null,
   source: run.event,
   commitTitle: run.head_commit?.message.split('\n')[0] ?? null,
 });
@@ -116,8 +117,9 @@ export class GithubProvider extends CiProvider {
       'Use a classic token with the repo and workflow scopes. Create one in GitHub under Settings → Developer settings → Personal access tokens.',
   };
 
-  verifyCredentials({ token }: Credentials) {
-    return fetchGithubLogin(token);
+  async verifyCredentials({ token }: Credentials) {
+    const user = await fetchGithubUser(token);
+    return { username: user.login, name: user.name, avatarUrl: user.avatar_url };
   }
 
   async listProjects(query: string, page: number) {

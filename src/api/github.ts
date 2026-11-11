@@ -18,7 +18,7 @@ export type GithubRun = {
   run_started_at?: string;
   updated_at: string;
   event: string;
-  actor?: { login: string } | null;
+  actor?: { login: string; avatar_url?: string | null } | null;
   head_commit?: { message: string } | null;
 };
 

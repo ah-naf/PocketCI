@@ -21,7 +21,7 @@ export type Pipeline = {
   finished_at: string | null;
   duration: number | null;
   source: string | null;
-  user?: { name: string; username: string } | null;
+  user?: { name: string; username: string; avatar_url?: string | null } | null;
 };
 
 export type Job = {

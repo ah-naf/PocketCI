@@ -39,7 +39,7 @@ export async function githubGetPage<T, Body = T[]>(path: string, pick?: (body: B
   return { items: pick ? pick(body) : (body as unknown as T[]), nextPage: next ? Number(next[1]) : null };
 }
 
-export async function fetchGithubLogin(token: string) {
+export async function fetchGithubUser(token: string) {
   const { text } = await githubRequest('/user', { token });
-  return (JSON.parse(text) as { login: string }).login;
+  return JSON.parse(text) as { login: string; name: string | null; avatar_url: string | null };
 }

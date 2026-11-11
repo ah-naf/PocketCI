@@ -1,4 +1,5 @@
 import type {
+  Account,
   Credentials,
   Job,
   LogChunk,
@@ -23,7 +24,7 @@ export abstract class CiProvider {
   abstract readonly capabilities: ProviderCapabilities;
   abstract readonly setup: ProviderSetup;
 
-  abstract verifyCredentials(credentials: Credentials): Promise<string>;
+  abstract verifyCredentials(credentials: Credentials): Promise<Account>;
 
   abstract listProjects(query: string, page: number): Promise<Page<ProjectRef>>;
   abstract getDefaultBranch(project: ProjectRef): Promise<string | null>;
