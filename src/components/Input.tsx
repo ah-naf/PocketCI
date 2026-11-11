@@ -4,7 +4,7 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 
 type Props = TextInputProps & {
-  label: string;
+  label?: string;
   error?: string;
   invalid?: boolean;
   secure?: boolean;
@@ -19,13 +19,16 @@ export function Input({ label, error, invalid, secure, mono = true, style, ...re
 
   return (
     <View style={tw`gap-1.5`}>
-      <AppText variant="small" style={tw`font-sans-medium`}>
-        {label}
-      </AppText>
+      {label && (
+        <AppText variant="small" style={tw`font-sans-medium`}>
+          {label}
+        </AppText>
+      )}
       <View>
         <TextInput
           autoCapitalize="none"
           autoCorrect={false}
+          accessibilityLabel={label}
           placeholderTextColor={colors.dim}
           {...rest}
           secureTextEntry={hidden}
@@ -54,7 +57,11 @@ export function Input({ label, error, invalid, secure, mono = true, style, ...re
           </Pressable>
         )}
       </View>
-      {error && <AppText variant="caption" tone="failed">{error}</AppText>}
+      {error && (
+        <AppText variant="caption" tone="failed">
+          {error}
+        </AppText>
+      )}
     </View>
   );
 }

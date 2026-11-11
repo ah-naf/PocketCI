@@ -21,6 +21,7 @@ const palettes = {
     canceled: '#5C6772',
     manual: '#F5A43C',
     term: '#07090B',
+    scrim: '#0000009E',
   },
   light: {
     bg: '#F5F6F3',
@@ -41,6 +42,7 @@ const palettes = {
     canceled: '#9AA3AB',
     manual: '#A45600',
     term: '#14181C',
+    scrim: '#14181C73',
   },
 };
 

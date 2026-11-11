@@ -6,16 +6,17 @@ import { Header } from './Header';
 
 type Props = {
   title?: string;
+  subtitle?: string;
   onBack?: () => void;
   scroll?: boolean;
   children: ReactNode;
 };
 
-export function Screen({ title, onBack, scroll, children }: Props) {
+export function Screen({ title, subtitle, onBack, scroll, children }: Props) {
   const { tw } = useTheme();
   return (
     <SafeAreaView style={tw`flex-1 bg-bg`}>
-      {title && <Header title={title} onBack={onBack} />}
+      {title && <Header title={title} subtitle={subtitle} onBack={onBack} />}
       {scroll ? (
         <ScrollView
           contentContainerStyle={tw`grow`}

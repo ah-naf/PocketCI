@@ -2,13 +2,14 @@ import { ActivityIndicator, Pressable, type StyleProp, type ViewStyle } from 're
 import { useTheme, type ColorName } from '../theme';
 import { AppText } from './AppText';
 
-type Variant = 'primary' | 'default' | 'ghost' | 'danger';
+type Variant = 'primary' | 'default' | 'ghost' | 'danger' | 'dangerSolid';
 
 const containers: Record<Variant, string> = {
   primary: 'bg-primary border-primary',
   default: 'bg-raised border-line',
   ghost: 'border-line',
   danger: 'border-failed/45',
+  dangerSolid: 'bg-failed border-failed',
 };
 
 const tones: Record<Variant, ColorName> = {
@@ -16,6 +17,7 @@ const tones: Record<Variant, ColorName> = {
   default: 'fg',
   ghost: 'fg',
   danger: 'failed',
+  dangerSolid: 'on-failed',
 };
 
 type Props = {
