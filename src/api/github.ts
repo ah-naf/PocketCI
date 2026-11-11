@@ -1,5 +1,6 @@
+import { ApiError } from './errors';
 import { buildQuery } from './http';
-import { githubGetJson, githubGetPage } from './githubClient';
+import { githubGetJson, githubGetPage, githubRequest } from './githubClient';
 import type { Page } from '../providers/types';
 
 export type GithubRepo = { name: string; full_name: string; default_branch: string };
@@ -27,6 +28,8 @@ export type GithubJob = {
   completed_at: string | null;
   html_url: string;
 };
+
+export type GithubContent = { name: string; path: string; type: string };
 
 const MAX_FILTER_PAGES = 5;
 
@@ -88,4 +91,45 @@ export async function fetchRunJobs(fullName: string, runId: string) {
 
 export function fetchRunJob(fullName: string, jobId: string) {
   return githubGetJson<GithubJob>(`/repos/${fullName}/actions/jobs/${jobId}`);
+}
+
+export async function fetchWorkflowFiles(fullName: string, branch: string) {
+  try {
+    const query = buildQuery({ ref: branch });
+    const files = await githubGetJson<GithubContent[]>(`/repos/${fullName}/contents/.github/workflows${query}`);
+    return files.filter((file) => file.type === 'file' && /\.ya?ml$/.test(file.name));
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return [];
+    throw error;
+  }
+}
+
+export async function fetchFileText(fullName: string, path: string, branch: string) {
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+  const { text } = await githubRequest(`/repos/${fullName}/contents/${encodedPath}${buildQuery({ ref: branch })}`, {
+    headers: { Accept: 'application/vnd.github.raw+json' },
+  });
+  return text;
+}
+
+export async function dispatchWorkflow(fullName: string, workflowFile: string, body: object) {
+  const { text } = await githubRequest(
+    `/repos/${fullName}/actions/workflows/${encodeURIComponent(workflowFile)}/dispatches`,
+    { method: 'POST', body },
+  );
+  return text ? (JSON.parse(text) as { workflow_run_id?: number }).workflow_run_id : undefined;
+}
+
+export async function fetchWorkflowRuns(fullName: string, workflowFile: string, branch: string) {
+  const query = buildQuery({ event: 'workflow_dispatch', branch, per_page: 5 });
+  const path = `/repos/${fullName}/actions/workflows/${encodeURIComponent(workflowFile)}/runs${query}`;
+  return (await githubGetJson<{ workflow_runs: GithubRun[] }>(path)).workflow_runs;
+}
+
+export async function forceCancelWorkflowRun(fullName: string, runId: string) {
+  await githubRequest(`/repos/${fullName}/actions/runs/${runId}/force-cancel`, { method: 'POST' });
+}
+
+export async function cancelWorkflowRun(fullName: string, runId: string) {
+  await githubRequest(`/repos/${fullName}/actions/runs/${runId}/cancel`, { method: 'POST' });
 }

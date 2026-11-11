@@ -12,6 +12,8 @@ export function usePipelineForm(variables: RunInput[] | undefined) {
   const [customRows, setCustomRows] = useState<CustomVariable[]>([]);
   const nextId = useRef(1);
 
+  const reset = () => setEdits({});
+
   const setValue = (key: string, value: string) => setEdits((current) => ({ ...current, [key]: value }));
 
   const addCustom = () => setCustomRows((rows) => [...rows, { id: nextId.current++, key: '', value: '' }]);
@@ -34,6 +36,7 @@ export function usePipelineForm(variables: RunInput[] | undefined) {
 
   return {
     edits,
+    reset,
     setValue,
     customRows,
     addCustom,

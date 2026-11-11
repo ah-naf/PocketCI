@@ -56,8 +56,14 @@ export type LogChunk = { text: string; cursor: string | null; replace: boolean }
 
 export type Credentials = { baseUrl: string; token: string };
 
-export type ProviderLabels = { projects: string; project: string; run: string; runs: string };
+export type ProviderLabels = {
+  projects: string;
+  project: string;
+  run: string;
+  runs: string;
+  target: string;
+};
 
-export type ProviderCapabilities = { cancelJob: boolean; liveLogs: boolean };
+export type ProviderCapabilities = { cancelJob: boolean; liveLogs: boolean; forceCancelRun: boolean };
 
 export type ProviderSetup = { editableBaseUrl: boolean; defaultBaseUrl: string; tokenHint: string };

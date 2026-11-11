@@ -43,6 +43,10 @@ export abstract class CiProvider {
 
   abstract cancelRun(project: ProjectRef, runId: string): Promise<void>;
 
+  forceCancelRun(project: ProjectRef, runId: string): Promise<void> {
+    return Promise.reject(new Error(`Force cancel is not supported (${project.key}, ${runId})`));
+  }
+
   cancelJob(project: ProjectRef, jobId: string): Promise<void> {
     return Promise.reject(new Error(`Cancelling a single job is not supported (${project.key}, ${jobId})`));
   }

@@ -57,8 +57,14 @@ const FALLBACK_NOTICE: Notice = {
 export class GitlabProvider extends CiProvider {
   readonly id = 'gitlab';
   readonly displayName = 'GitLab';
-  readonly labels = { projects: 'Projects', project: 'project', run: 'pipeline', runs: 'pipelines' };
-  readonly capabilities = { cancelJob: true, liveLogs: true };
+  readonly labels = {
+    projects: 'Projects',
+    project: 'project',
+    run: 'pipeline',
+    runs: 'pipelines',
+    target: 'pipeline',
+  };
+  readonly capabilities = { cancelJob: true, liveLogs: true, forceCancelRun: false };
   readonly setup = {
     editableBaseUrl: true,
     defaultBaseUrl: DEFAULT_BASE_URL,

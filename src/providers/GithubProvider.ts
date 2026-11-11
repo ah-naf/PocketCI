@@ -1,4 +1,8 @@
 import {
+  cancelWorkflowRun,
+  dispatchWorkflow,
+  forceCancelWorkflowRun,
+  fetchFileText,
   fetchRepo,
   fetchRepoBranches,
   fetchRepos,
@@ -6,16 +10,19 @@ import {
   fetchRunJob,
   fetchRunJobs,
   fetchRuns,
+  fetchWorkflowFiles,
+  fetchWorkflowRuns,
   type GithubJob,
   type GithubRepo,
   type GithubRun,
 } from '../api/github';
 import { fetchGithubLogin, githubRequest } from '../api/githubClient';
 import { ApiError } from '../api/errors';
+import { parseWorkflowTarget } from '../api/githubWorkflows';
 import { cleanGithubLog } from '../utils/githubLog';
 import { mapGithubStatus } from '../utils/githubStatus';
 import { CiProvider } from './CiProvider';
-import type { Credentials, Job, ProjectRef, Run, RunOptions } from './types';
+import type { Credentials, Job, ProjectRef, Run, RunOptions, RunTarget, StartRunRequest } from './types';
 
 const toProjectRef = (repo: GithubRepo): ProjectRef => ({
   providerId: 'github',
@@ -49,16 +56,30 @@ const toJob = (job: GithubJob): Job => ({
   webUrl: job.html_url,
 });
 
-const RUN_OPTIONS_PENDING: RunOptions = {
+const MAX_DISPATCH_INPUTS = 25;
+const FIND_RUN_TIMEOUT_MS = 15000;
+const FIND_RUN_INTERVAL_MS = 2000;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function uniqueNames(targets: RunTarget[]): RunTarget[] {
+  return targets.map((target) =>
+    targets.filter((other) => other.name === target.name).length > 1
+      ? { ...target, name: `${target.name} (${target.id})` }
+      : target,
+  );
+}
+
+const NO_WORKFLOWS: RunOptions = {
   targets: [],
   allowCustomInputs: false,
-  notices: [
-    {
-      kind: 'info',
-      title: 'Starting workflows is not available yet',
-      message: 'You can browse runs, jobs and logs. Running a workflow comes in a later step.',
-    },
-  ],
+  notices: [{ kind: 'info', title: 'No workflows on this branch' }],
+};
+
+const NONE_RUNNABLE_NOTICE = {
+  kind: 'info' as const,
+  title: 'No workflow can be started manually',
+  message: 'Add a workflow_dispatch trigger to a workflow file to run it from here.',
 };
 
 export class GithubProvider extends CiProvider {
@@ -69,8 +90,9 @@ export class GithubProvider extends CiProvider {
     project: 'repository',
     run: 'workflow run',
     runs: 'workflow runs',
+    target: 'workflow',
   };
-  readonly capabilities = { cancelJob: false, liveLogs: false };
+  readonly capabilities = { cancelJob: false, liveLogs: false, forceCancelRun: true };
   readonly setup = {
     editableBaseUrl: false,
     defaultBaseUrl: 'https://api.github.com',
@@ -96,12 +118,46 @@ export class GithubProvider extends CiProvider {
     return { ...result, items: result.items.map((branch) => branch.name) };
   }
 
-  async getRunOptions() {
-    return RUN_OPTIONS_PENDING;
+  async getRunOptions(project: ProjectRef, branch: string): Promise<RunOptions> {
+    const files = await fetchWorkflowFiles(project.key, branch);
+    if (files.length === 0) return NO_WORKFLOWS;
+    const targets = await Promise.all(
+      files.map(async (file) => {
+        try {
+          return parseWorkflowTarget(file.path, await fetchFileText(project.key, file.path, branch));
+        } catch {
+          return parseWorkflowTarget(file.path, '');
+        }
+      }),
+    );
+    const notices = targets.some((target) => target.runnable) ? [] : [NONE_RUNNABLE_NOTICE];
+    return { targets: uniqueNames(targets), allowCustomInputs: false, notices };
   }
 
-  startRun(): Promise<{ runId: string | null }> {
-    return Promise.reject(new Error('Starting workflows is not available yet'));
+  async startRun(project: ProjectRef, branch: string, { targetId, inputs }: StartRunRequest) {
+    if (inputs.length > MAX_DISPATCH_INPUTS) {
+      throw new Error(`GitHub accepts at most ${MAX_DISPATCH_INPUTS} inputs per run`);
+    }
+    const knownRuns = await fetchWorkflowRuns(project.key, targetId, branch);
+    const lastKnownId = Math.max(0, ...knownRuns.map((run) => run.id));
+    const runId = await dispatchWorkflow(project.key, targetId, {
+      ref: branch,
+      inputs: Object.fromEntries(inputs.map(({ key, value }) => [key, value])),
+      return_run_details: true,
+    });
+    if (runId) return { runId: String(runId) };
+    return { runId: await this.findDispatchedRun(project.key, targetId, branch, lastKnownId) };
+  }
+
+  private async findDispatchedRun(fullName: string, workflowFile: string, branch: string, lastKnownId: number) {
+    const deadline = Date.now() + FIND_RUN_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      await sleep(FIND_RUN_INTERVAL_MS);
+      const runs = await fetchWorkflowRuns(fullName, workflowFile, branch);
+      const found = runs.find((run) => run.id > lastKnownId);
+      if (found) return String(found.id);
+    }
+    return null;
   }
 
   async listRuns(project: ProjectRef, branch: string) {
@@ -143,7 +199,22 @@ export class GithubProvider extends CiProvider {
     return cleanGithubLog(raw);
   }
 
-  cancelRun(): Promise<void> {
-    return Promise.reject(new Error('Cancelling is not available yet'));
+  async cancelRun(project: ProjectRef, runId: string) {
+    await this.withFinishedHint(() => cancelWorkflowRun(project.key, runId));
+  }
+
+  async forceCancelRun(project: ProjectRef, runId: string) {
+    await this.withFinishedHint(() => forceCancelWorkflowRun(project.key, runId));
+  }
+
+  private async withFinishedHint(request: () => Promise<void>) {
+    try {
+      await request();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        throw new Error("This run can't be cancelled, it may have already finished");
+      }
+      throw error;
+    }
   }
 }

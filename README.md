@@ -5,7 +5,7 @@ Personal mobile app (Expo, React Native, TypeScript) for a self-hosted GitLab. I
 ## Status
 
 Features:
-- Token setup and Settings for GitLab and GitHub (GitHub browsing and runs are coming, see the tickets)
+- Token setup and Settings for GitLab and GitHub
 - Switch between GitLab and GitHub from the Projects screen
 - Project list with search (projects the token's user is a member of)
 - Searchable branch list
@@ -72,6 +72,25 @@ The base URL defaults to `https://gitlab.niftycoders.net/api/v4` and can be chan
 ### GitHub (github.com)
 
 Create a classic personal access token under Settings → Developer settings → Personal access tokens with the `repo` and `workflow` scopes. If your repositories belong to an organization that uses SSO, authorize the token for that organization. There is no base URL to set.
+
+### Running GitHub workflows
+
+The app lists every workflow file on the branch, but it can only start the ones with a `workflow_dispatch` trigger. Workflows without it are shown dimmed with the note "No manual trigger". Inputs come from the workflow file:
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        default: staging
+      debug:
+        type: boolean
+```
+
+`choice` and `boolean` inputs get a picker, everything else is a text field. GitHub accepts at most 25 inputs per run.
 
 ## Project structure
 
