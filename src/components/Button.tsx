@@ -48,7 +48,7 @@ export function Button({ label, onPress, variant = 'default', loading, disabled,
       ]}
     >
       {loading && <ActivityIndicator size="small" color={colors[tones[variant]]} />}
-      <AppText variant="body" tone={tones[variant]} style={tw`font-sans-semibold`}>
+      <AppText variant="body" tone={tones[variant]} numberOfLines={1} style={tw`font-sans-semibold`}>
         {label}
       </AppText>
     </Pressable>

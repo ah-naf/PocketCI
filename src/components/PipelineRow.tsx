@@ -3,9 +3,9 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { StatusBadge } from './StatusBadge';
 
-type Props = { id: string; status: string; ago: string; duration: string; onPress?: () => void };
+type Props = { id: string; title?: string; status: string; ago: string; duration: string; onPress?: () => void };
 
-export function PipelineRow({ id, status, ago, duration, onPress }: Props) {
+export function PipelineRow({ id, title, status, ago, duration, onPress }: Props) {
   const { tw, colors } = useTheme();
   return (
     <Pressable
@@ -17,9 +17,16 @@ export function PipelineRow({ id, status, ago, duration, onPress }: Props) {
       <View style={tw`w-24`}>
         <StatusBadge status={status} />
       </View>
-      <AppText mono style={tw`flex-1 text-[15px] font-mono-medium`}>
-        #{id}
-      </AppText>
+      <View style={tw`min-w-0 flex-1 gap-0.5`}>
+        <AppText mono style={tw`text-[15px] font-mono-medium`}>
+          #{id}
+        </AppText>
+        {title ? (
+          <AppText variant="caption" numberOfLines={1}>
+            {title}
+          </AppText>
+        ) : null}
+      </View>
       <View style={tw`items-end gap-0.5`}>
         <AppText variant="caption" tone="muted">
           {ago}

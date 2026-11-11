@@ -9,6 +9,7 @@ type Props = {
   branch: string;
   projectName: string;
   entries: VariableEntry[];
+  actionLabel: string;
   runLabel: string;
   serviceName: string;
   submitting: boolean;
@@ -16,7 +17,18 @@ type Props = {
   onCancel: () => void;
 };
 
-export function RunConfirmDialog({ visible, branch, projectName, entries, runLabel, serviceName, submitting, onConfirm, onCancel }: Props) {
+export function RunConfirmDialog({
+  visible,
+  branch,
+  projectName,
+  entries,
+  actionLabel,
+  runLabel,
+  serviceName,
+  submitting,
+  onConfirm,
+  onCancel,
+}: Props) {
   const { tw } = useTheme();
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onCancel}>
@@ -24,7 +36,7 @@ export function RunConfirmDialog({ visible, branch, projectName, entries, runLab
         <Pressable accessibilityLabel="Close" onPress={onCancel} style={tw`absolute inset-0 bg-scrim`} />
         <View style={tw`gap-4 rounded-2xl border border-line bg-card p-5`}>
           <View style={tw`gap-1`}>
-            <AppText variant="heading">Run {runLabel}?</AppText>
+            <AppText variant="heading">Run {actionLabel}?</AppText>
             <AppText variant="small">
               This starts a new {runLabel} on {serviceName} with the values below.
             </AppText>
@@ -65,7 +77,7 @@ export function RunConfirmDialog({ visible, branch, projectName, entries, runLab
             <Button variant="ghost" label="Cancel" onPress={onCancel} style={tw`flex-1`} />
             <Button
               variant="primary"
-              label={`Run ${runLabel}`}
+              label={`Run ${actionLabel}`}
               onPress={onConfirm}
               loading={submitting}
               style={tw`flex-1`}
