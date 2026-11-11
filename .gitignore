@@ -1,0 +1,11 @@
+IDEA.md
+tickets/
+node_modules/
+.expo/
+dist/
+expo-env.d.ts
+*.tsbuildinfo
+.env*.local
+.DS_Store
+/ios
+/android
