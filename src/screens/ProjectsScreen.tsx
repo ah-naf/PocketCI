@@ -4,11 +4,14 @@ import { fetchProjects } from '../api/projects';
 import { AppText } from '../components/AppText';
 import { ListRow } from '../components/ListRow';
 import { Screen } from '../components/Screen';
+import { SectionHeader } from '../components/SectionHeader';
 import { SearchList } from '../components/SearchList';
 import { TextButton } from '../components/TextButton';
 import { useGitlabHost } from '../hooks/useGitlabHost';
+import { useRecentProjects } from '../hooks/useRecentProjects';
 import { useSearchPage } from '../hooks/useSearchPage';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { rememberProject, type RecentProject } from '../storage/recentProjects';
 import { useTheme } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Projects'>;
@@ -16,7 +19,25 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Projects'>;
 export function ProjectsScreen({ navigation }: Props) {
   const { tw } = useTheme();
   const host = useGitlabHost();
+  const recent = useRecentProjects();
   const { search, setSearch, items, busy, error, refresh, loadMore } = useSearchPage(fetchProjects);
+
+  function openProject(project: RecentProject) {
+    rememberProject(project);
+    navigation.navigate('Branches', { projectId: project.id, projectName: project.name });
+  }
+
+  const renderProject = (project: RecentProject) => (
+    <ListRow
+      key={project.id}
+      title={project.name}
+      subtitle={project.path}
+      tag={String(project.id)}
+      onPress={() => openProject(project)}
+    />
+  );
+
+  const showRecent = search.trim() === '' && recent.length > 0;
 
   return (
     <Screen>
@@ -32,16 +53,18 @@ export function ProjectsScreen({ navigation }: Props) {
       <SearchList
         data={items}
         keyExtractor={(project) => String(project.id)}
-        renderItem={(project) => (
-          <ListRow
-            title={project.name}
-            subtitle={project.path_with_namespace}
-            tag={String(project.id)}
-            onPress={() =>
-              navigation.navigate('Branches', { projectId: project.id, projectName: project.name })
-            }
-          />
-        )}
+        renderItem={({ id, name, path_with_namespace }) =>
+          renderProject({ id, name, path: path_with_namespace })
+        }
+        header={
+          showRecent ? (
+            <View>
+              <SectionHeader title="Recent" />
+              {recent.map(renderProject)}
+              <SectionHeader title="All projects" />
+            </View>
+          ) : undefined
+        }
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search projects"

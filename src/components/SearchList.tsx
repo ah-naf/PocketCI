@@ -13,6 +13,7 @@ type Props<T> = {
   data: T[];
   keyExtractor: (item: T) => string;
   renderItem: (item: T) => ReactElement;
+  header?: ReactElement;
   search: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder: string;
@@ -29,6 +30,7 @@ export function SearchList<T>({
   data,
   keyExtractor,
   renderItem,
+  header,
   search,
   onSearchChange,
   searchPlaceholder,
@@ -60,6 +62,7 @@ export function SearchList<T>({
         onEndReachedThreshold={0.5}
         refreshControl={<AppRefreshControl refreshing={busy === 'refresh'} onRefresh={onRefresh} />}
         renderItem={({ item }) => renderItem(item)}
+        ListHeaderComponent={header}
         ListEmptyComponent={
           busy === 'initial' ? (
             <LoadingRow label={loadingLabel} />
