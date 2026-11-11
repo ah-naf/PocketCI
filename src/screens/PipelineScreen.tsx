@@ -53,6 +53,18 @@ export function PipelineScreen({ navigation, route }: Props) {
       jobs.poll();
     });
 
+  const forceCancelRunningRun = () =>
+    confirmCancel(
+      provider.labels.run,
+      provider.displayName,
+      () => provider.forceCancelRun(project, runId),
+      () => {
+        run.poll();
+        jobs.poll();
+      },
+      true,
+    );
+
   const stages = useMemo(() => groupJobsByStage(jobs.data ?? []), [jobs.data]);
   const error = run.error ?? jobs.error;
 
@@ -84,6 +96,7 @@ export function PipelineScreen({ navigation, route }: Props) {
           cancelLabel={`Cancel ${provider.labels.run}`}
           onOpenExternal={() => Linking.openURL(run.data?.webUrl ?? '')}
           onCancel={active && run.data.status !== 'canceling' ? cancelRunningRun : undefined}
+          onForceCancel={active && provider.capabilities.forceCancelRun ? forceCancelRunningRun : undefined}
         />
       )}
       <View style={tw`pb-8 pt-4`}>

@@ -12,9 +12,10 @@ type Props = {
   cancelLabel: string;
   onOpenExternal: () => void;
   onCancel?: () => void;
+  onForceCancel?: () => void;
 };
 
-export function PipelineSummaryCard({ pipeline, elapsed, openLabel, cancelLabel, onOpenExternal, onCancel }: Props) {
+export function PipelineSummaryCard({ pipeline, elapsed, openLabel, cancelLabel, onOpenExternal, onCancel, onForceCancel }: Props) {
   const { tw } = useTheme();
   return (
     <View style={tw`mx-4 gap-4 rounded-2xl border border-line bg-card p-4`}>
@@ -40,6 +41,7 @@ export function PipelineSummaryCard({ pipeline, elapsed, openLabel, cancelLabel,
       </View>
       <Button variant="ghost" label={openLabel} onPress={onOpenExternal} />
       {onCancel && <Button variant="danger" label={cancelLabel} onPress={onCancel} />}
+      {onForceCancel && <Button variant="danger" label="Force cancel" onPress={onForceCancel} />}
     </View>
   );
 }
