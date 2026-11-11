@@ -77,3 +77,10 @@ export async function getJson<T>(path: string, options?: RequestOptions): Promis
   const { text } = await gitlabRequest(path, options);
   return JSON.parse(text) as T;
 }
+
+export type Page<T> = { items: T[]; nextPage: number | null };
+
+export async function getPage<T>(path: string, options?: RequestOptions): Promise<Page<T>> {
+  const { text, headers } = await gitlabRequest(path, options);
+  return { items: JSON.parse(text) as T[], nextPage: Number(headers.get('x-next-page')) || null };
+}
