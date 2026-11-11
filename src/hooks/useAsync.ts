@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+type Mode = 'initial' | 'refresh' | 'silent';
+
 type State<T> = { data?: T; error?: unknown; loading: boolean; refreshing: boolean };
 
 export function useAsync<T>(load: () => Promise<T>) {
@@ -7,24 +9,37 @@ export function useAsync<T>(load: () => Promise<T>) {
   const latestRequest = useRef(0);
 
   const run = useCallback(
-    async (refreshing: boolean) => {
+    async (mode: Mode) => {
       const request = ++latestRequest.current;
-      setState((current) => ({ ...current, loading: !refreshing, refreshing, error: undefined }));
+      if (mode !== 'silent') {
+        setState((current) => ({
+          ...current,
+          loading: mode === 'initial',
+          refreshing: mode === 'refresh',
+          error: undefined,
+        }));
+      }
       try {
         const data = await load();
         if (request === latestRequest.current) setState({ data, loading: false, refreshing: false });
       } catch (error) {
-        if (request === latestRequest.current) setState({ error, loading: false, refreshing: false });
+        if (request !== latestRequest.current) return;
+        setState((current) =>
+          mode === 'silent'
+            ? { ...current, loading: false, refreshing: false }
+            : { error, loading: false, refreshing: false },
+        );
       }
     },
     [load],
   );
 
   useEffect(() => {
-    run(false);
+    run('initial');
   }, [run]);
 
-  const reload = useCallback(() => run(true), [run]);
+  const reload = useCallback(() => run('refresh'), [run]);
+  const poll = useCallback(() => run('silent'), [run]);
 
-  return { ...state, reload };
+  return { ...state, reload, poll };
 }
