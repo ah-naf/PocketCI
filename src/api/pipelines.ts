@@ -8,11 +8,46 @@ export type PipelineSummary = {
   web_url: string;
 };
 
+export type Pipeline = {
+  id: number;
+  status: string;
+  ref: string;
+  sha: string;
+  web_url: string;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  duration: number | null;
+};
+
+export type Job = {
+  id: number;
+  name: string;
+  stage: string;
+  status: string;
+  duration: number | null;
+  started_at: string | null;
+  web_url: string;
+};
+
 export type CreatedPipeline = { id: number; status: string; web_url: string };
 
 export function fetchPipelines(projectId: number, branch: string) {
   const query = buildQuery({ ref: branch, per_page: 20, order_by: 'id', sort: 'desc' });
   return getJson<PipelineSummary[]>(`/projects/${projectId}/pipelines${query}`);
+}
+
+export function fetchPipeline(projectId: number, pipelineId: number) {
+  return getJson<Pipeline>(`/projects/${projectId}/pipelines/${pipelineId}`);
+}
+
+export function fetchJobs(projectId: number, pipelineId: number) {
+  const query = buildQuery({ per_page: 100 });
+  return getJson<Job[]>(`/projects/${projectId}/pipelines/${pipelineId}/jobs${query}`);
+}
+
+export function fetchJob(projectId: number, jobId: number) {
+  return getJson<Job>(`/projects/${projectId}/jobs/${jobId}`);
 }
 
 export function createPipeline(projectId: number, branch: string, variables: { key: string; value: string }[]) {

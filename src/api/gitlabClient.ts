@@ -10,7 +10,7 @@ type RequestOptions = {
   auth?: Settings;
 };
 
-export type GitlabResponse = { text: string; headers: Headers };
+export type GitlabResponse = { text: string; headers: Headers; status: number };
 
 export function buildQuery(params: Record<string, string | number | undefined>) {
   const parts = Object.entries(params)
@@ -70,7 +70,7 @@ export async function gitlabRequest(
   if (!response.ok) {
     throw new GitlabError('http', response.status, readErrorMessage(text, response.statusText));
   }
-  return { text, headers: response.headers };
+  return { text, headers: response.headers, status: response.status };
 }
 
 export async function getJson<T>(path: string, options?: RequestOptions): Promise<T> {

@@ -1,3 +1,5 @@
+import type { Job, Pipeline } from '../api/pipelines';
+
 const FINISHED_STATUSES = ['success', 'failed', 'canceled', 'skipped'];
 
 export function formatDuration(totalSeconds: number) {
@@ -13,6 +15,18 @@ export function formatRelativeTime(isoDate: string) {
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   if (seconds < 172800) return 'yesterday';
   return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+export function formatJobDuration(job: Job, now: number) {
+  if (job.status === 'running' && job.started_at) return formatDuration((now - Date.parse(job.started_at)) / 1000);
+  return job.duration === null ? '—' : formatDuration(job.duration);
+}
+
+export function formatPipelineElapsed(pipeline: Pipeline, now: number) {
+  if (pipeline.duration !== null) return formatDuration(pipeline.duration);
+  const start = Date.parse(pipeline.started_at ?? pipeline.created_at);
+  const end = pipeline.finished_at ? Date.parse(pipeline.finished_at) : now;
+  return formatDuration((end - start) / 1000);
 }
 
 export function formatPipelineDuration(createdAt: string, updatedAt: string, status: string) {
