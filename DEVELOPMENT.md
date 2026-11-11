@@ -31,7 +31,7 @@ Every ticket and every code change follows these rules.
 - `src/hooks`: shared stateful logic (`usePoll`, `usePaginated`).
 - `src/storage`: SecureStore and AsyncStorage access.
 - `src/theme`: Tailwind config, colors, fonts.
-- `src/utils`: small pure helpers (formatting).
+- `src/utils`: small helpers (formatting, log parsing, dialogs).
 
 ## Security
 - Token lives only in `expo-secure-store`. Never in AsyncStorage, URLs, logs, or source.

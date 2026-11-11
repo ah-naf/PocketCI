@@ -3,9 +3,10 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { fetchJob } from '../api/pipelines';
+import { cancelJob, fetchJob } from '../api/pipelines';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
+import { NoticeBar } from '../components/NoticeBar';
 import { ErrorView } from '../components/ErrorView';
 import { LiveBadge } from '../components/LiveBadge';
 import { LoadingRow } from '../components/LoadingRow';
@@ -20,6 +21,7 @@ import { useNow } from '../hooks/useNow';
 import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from '../theme';
+import { confirmCancel } from '../utils/confirmCancel';
 import { formatJobDuration } from '../utils/format';
 import { MAX_LOG_LINES, parseLog, toLogLines } from '../utils/log';
 import { isJobActive } from '../utils/status';
@@ -60,6 +62,12 @@ export function JobLogScreen({ navigation, route }: Props) {
   const skipped = showFull ? 0 : Math.max(0, allLines.length - MAX_LOG_LINES);
   const lines = useMemo(() => toLogLines(allLines, skipped), [allLines, skipped]);
 
+  const cancelRunningJob = () =>
+    confirmCancel('job', () => cancelJob(projectId, jobId), () => {
+      job.poll();
+      log.poll();
+    });
+
   async function copyLog() {
     await Clipboard.setStringAsync(allLines.join('\n'));
     setCopied(true);
@@ -87,13 +95,13 @@ export function JobLogScreen({ navigation, route }: Props) {
         </>
       }
     >
+      {live && status !== 'canceling' && <NoticeBar text="This job is running." actionLabel="Cancel job" danger onAction={cancelRunningJob} />}
       {skipped > 0 && (
-        <View style={tw`flex-row items-center gap-3 border-b border-line bg-card py-1.5 pl-4 pr-2`}>
-          <AppText variant="small" style={tw`flex-1`}>
-            Showing the last {MAX_LOG_LINES} of {allLines.length} lines
-          </AppText>
-          <TextButton label="Load full log" onPress={() => setShowFull(true)} />
-        </View>
+        <NoticeBar
+          text={`Showing the last ${MAX_LOG_LINES} of ${allLines.length} lines`}
+          actionLabel="Load full log"
+          onAction={() => setShowFull(true)}
+        />
       )}
       {log.loading && <LoadingRow label="Loading log" />}
       {log.error !== undefined && log.text === '' && <ErrorView error={log.error} onRetry={log.reload} />}

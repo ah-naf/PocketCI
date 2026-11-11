@@ -50,6 +50,14 @@ export function fetchJob(projectId: number, jobId: number) {
   return getJson<Job>(`/projects/${projectId}/jobs/${jobId}`);
 }
 
+export function cancelPipeline(projectId: number, pipelineId: number) {
+  return getJson<Pipeline>(`/projects/${projectId}/pipelines/${pipelineId}/cancel`, { method: 'POST' });
+}
+
+export function cancelJob(projectId: number, jobId: number) {
+  return getJson<Job>(`/projects/${projectId}/jobs/${jobId}/cancel`, { method: 'POST' });
+}
+
 export function createPipeline(projectId: number, branch: string, variables: { key: string; value: string }[]) {
   return getJson<CreatedPipeline>(`/projects/${projectId}/pipeline`, {
     method: 'POST',

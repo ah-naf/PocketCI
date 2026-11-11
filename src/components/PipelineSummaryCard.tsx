@@ -5,9 +5,14 @@ import { AppText } from './AppText';
 import { Button } from './Button';
 import { StatusBadge } from './StatusBadge';
 
-type Props = { pipeline: Pipeline; elapsed: string; onOpenInGitlab: () => void };
+type Props = {
+  pipeline: Pipeline;
+  elapsed: string;
+  onOpenInGitlab: () => void;
+  onCancel?: () => void;
+};
 
-export function PipelineSummaryCard({ pipeline, elapsed, onOpenInGitlab }: Props) {
+export function PipelineSummaryCard({ pipeline, elapsed, onOpenInGitlab, onCancel }: Props) {
   const { tw } = useTheme();
   return (
     <View style={tw`mx-4 gap-4 rounded-2xl border border-line bg-card p-4`}>
@@ -32,6 +37,7 @@ export function PipelineSummaryCard({ pipeline, elapsed, onOpenInGitlab }: Props
         </View>
       </View>
       <Button variant="ghost" label="Open in GitLab" onPress={onOpenInGitlab} />
+      {onCancel && <Button variant="danger" label="Cancel pipeline" onPress={onCancel} />}
     </View>
   );
 }

@@ -2,7 +2,7 @@ import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useMemo } from 'react';
 import { Linking, View } from 'react-native';
-import { fetchJobs, fetchPipeline } from '../api/pipelines';
+import { cancelPipeline, fetchJobs, fetchPipeline } from '../api/pipelines';
 import { AppRefreshControl } from '../components/AppRefreshControl';
 import { AppText } from '../components/AppText';
 import { ErrorView } from '../components/ErrorView';
@@ -16,6 +16,7 @@ import { useNow } from '../hooks/useNow';
 import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from '../theme';
+import { confirmCancel } from '../utils/confirmCancel';
 import { formatPipelineElapsed } from '../utils/format';
 import { groupJobsByStage } from '../utils/stages';
 import { isPipelineActive } from '../utils/status';
@@ -45,6 +46,12 @@ export function PipelineScreen({ navigation, route }: Props) {
     active && focused,
   );
 
+  const cancelRunningPipeline = () =>
+    confirmCancel('pipeline', () => cancelPipeline(projectId, pipelineId), () => {
+      pipeline.poll();
+      jobs.poll();
+    });
+
   const stages = useMemo(() => groupJobsByStage(jobs.data ?? []), [jobs.data]);
   const error = pipeline.error ?? jobs.error;
 
@@ -73,6 +80,7 @@ export function PipelineScreen({ navigation, route }: Props) {
           pipeline={pipeline.data}
           elapsed={formatPipelineElapsed(pipeline.data, now)}
           onOpenInGitlab={() => Linking.openURL(pipeline.data?.web_url ?? '')}
+          onCancel={active && pipeline.data.status !== 'canceling' ? cancelRunningPipeline : undefined}
         />
       )}
       <View style={tw`pb-8 pt-4`}>
