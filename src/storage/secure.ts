@@ -1,27 +1,30 @@
 import * as SecureStore from 'expo-secure-store';
-
-const TOKEN_KEY = 'gitlab_token';
-const BASE_URL_KEY = 'gitlab_base_url';
+import type { Credentials, ProviderId } from '../providers/types';
 
 export const DEFAULT_BASE_URL = 'https://gitlab.niftycoders.net/api/v4';
 
-export type Settings = { baseUrl: string; token: string };
+const KEYS: Record<ProviderId, { token: string; baseUrl?: string }> = {
+  gitlab: { token: 'gitlab_token', baseUrl: 'gitlab_base_url' },
+  github: { token: 'github_token' },
+};
 
-export async function loadSettings(): Promise<Settings> {
+export async function loadCredentials(providerId: ProviderId, defaultBaseUrl: string): Promise<Credentials> {
+  const keys = KEYS[providerId];
   const [baseUrl, token] = await Promise.all([
-    SecureStore.getItemAsync(BASE_URL_KEY),
-    SecureStore.getItemAsync(TOKEN_KEY),
+    keys.baseUrl ? SecureStore.getItemAsync(keys.baseUrl) : null,
+    SecureStore.getItemAsync(keys.token),
   ]);
-  return { baseUrl: baseUrl ?? DEFAULT_BASE_URL, token: token ?? '' };
+  return { baseUrl: baseUrl ?? defaultBaseUrl, token: token ?? '' };
 }
 
-export async function saveSettings({ baseUrl, token }: Settings) {
+export async function saveCredentials(providerId: ProviderId, { baseUrl, token }: Credentials) {
+  const keys = KEYS[providerId];
   await Promise.all([
-    SecureStore.setItemAsync(BASE_URL_KEY, baseUrl),
-    SecureStore.setItemAsync(TOKEN_KEY, token),
+    keys.baseUrl ? SecureStore.setItemAsync(keys.baseUrl, baseUrl) : undefined,
+    SecureStore.setItemAsync(keys.token, token),
   ]);
 }
 
-export function deleteToken() {
-  return SecureStore.deleteItemAsync(TOKEN_KEY);
+export function deleteToken(providerId: ProviderId) {
+  return SecureStore.deleteItemAsync(KEYS[providerId].token);
 }

@@ -1,19 +1,13 @@
-import { loadSettings, type Settings } from '../storage/secure';
-import type { Page } from '../providers/types';
+import type { Credentials, Page } from '../providers/types';
+import { DEFAULT_BASE_URL, loadCredentials } from '../storage/secure';
 import { GitlabError } from './errors';
+import { httpRequest, type HttpRequest, type HttpResponse } from './http';
 
 export type { Page };
 
-const TIMEOUT_MS = 15000;
+type RequestOptions = HttpRequest & { auth?: Credentials };
 
-type RequestOptions = {
-  method?: 'GET' | 'POST';
-  body?: unknown;
-  headers?: Record<string, string>;
-  auth?: Settings;
-};
-
-export type GitlabResponse = { text: string; headers: Headers; status: number };
+export type GitlabResponse = HttpResponse;
 
 export function buildQuery(params: Record<string, string | number | undefined>) {
   const parts = Object.entries(params)
@@ -22,58 +16,15 @@ export function buildQuery(params: Record<string, string | number | undefined>) 
   return parts.length ? `?${parts.join('&')}` : '';
 }
 
-async function getStoredAuth(): Promise<Settings> {
-  const settings = await loadSettings();
-  if (!settings.token) throw new GitlabError('http', 401, 'No access token set');
-  return settings;
+async function getStoredAuth(): Promise<Credentials> {
+  const credentials = await loadCredentials('gitlab', DEFAULT_BASE_URL);
+  if (!credentials.token) throw new GitlabError('http', 401, 'No access token set');
+  return credentials;
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Request failed';
-    throw new GitlabError(controller.signal.aborted ? 'timeout' : 'network', 0, message);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function readErrorMessage(text: string, fallback: string) {
-  try {
-    const data: unknown = JSON.parse(text);
-    if (data && typeof data === 'object') {
-      const { message, error_description, error } = data as Record<string, unknown>;
-      const found = message ?? error_description ?? error;
-      if (found !== undefined) return typeof found === 'string' ? found : JSON.stringify(found);
-    }
-  } catch {
-    return text || fallback;
-  }
-  return text || fallback;
-}
-
-export async function gitlabRequest(
-  path: string,
-  { method = 'GET', body, headers, auth }: RequestOptions = {},
-): Promise<GitlabResponse> {
+export async function gitlabRequest(path: string, { auth, headers, ...request }: RequestOptions = {}) {
   const { baseUrl, token } = auth ?? (await getStoredAuth());
-  const response = await fetchWithTimeout(`${baseUrl}${path}`, {
-    method,
-    headers: {
-      'PRIVATE-TOKEN': token,
-      ...(body !== undefined && { 'Content-Type': 'application/json' }),
-      ...headers,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  const text = await response.text();
-  if (!response.ok) {
-    throw new GitlabError('http', response.status, readErrorMessage(text, response.statusText));
-  }
-  return { text, headers: response.headers, status: response.status };
+  return httpRequest(`${baseUrl}${path}`, { ...request, headers: { 'PRIVATE-TOKEN': token, ...headers } });
 }
 
 export async function getJson<T>(path: string, options?: RequestOptions): Promise<T> {

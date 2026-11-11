@@ -13,7 +13,7 @@ export class GitlabError extends Error {
 
 export type FriendlyError = { title: string; message: string; detail?: string };
 
-export function describeError(error: unknown): FriendlyError {
+export function describeError(error: unknown, service = 'GitLab'): FriendlyError {
   if (!(error instanceof GitlabError)) {
     return {
       title: 'Something went wrong',
@@ -23,9 +23,8 @@ export function describeError(error: unknown): FriendlyError {
 
   if (error.kind !== 'http') {
     return {
-      title: "Can't reach GitLab",
-      message:
-        "Check your connection or VPN. This GitLab may only be reachable on the company network. If you are connected, the phone may not trust the server's certificate.",
+      title: `Can't reach ${service}`,
+      message: `Check your connection or VPN. This ${service} may only be reachable on the company network. If you are connected, the phone may not trust the server's certificate.`,
       detail: error.message,
     };
   }
@@ -34,7 +33,7 @@ export function describeError(error: unknown): FriendlyError {
   switch (error.status) {
     case 401:
       return {
-        title: 'GitLab rejected the token',
+        title: `${service} rejected the token`,
         message:
           'It may have expired or been revoked, or it is missing the api scope. Paste a new one and test again.',
         detail,
