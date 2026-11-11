@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BranchScreen } from '../screens/BranchScreen';
 import { BranchesScreen } from '../screens/BranchesScreen';
+import { DashboardScreen } from '../screens/DashboardScreen';
 import { JobLogScreen } from '../screens/JobLogScreen';
 import { PipelineScreen } from '../screens/PipelineScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
@@ -13,6 +14,7 @@ import { useTheme } from '../theme';
 export type RootStackParamList = {
   Setup: undefined;
   Projects: undefined;
+  Dashboard: undefined;
   Settings: undefined;
   Branches: { project: ProjectRef };
   Branch: { project: ProjectRef; branch: string };
@@ -42,6 +44,7 @@ export function RootNavigator({ initialRouteName }: { initialRouteName: keyof Ro
       <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Setup" component={SetupScreen} />
         <Stack.Screen name="Projects" component={ProjectsScreen} />
+        <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Branches" component={BranchesScreen} />
         <Stack.Screen name="Branch" component={BranchScreen} />

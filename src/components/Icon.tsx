@@ -45,21 +45,22 @@ const icons = {
     </>
   ),
   arrowDown: <Path d="M12 4v12M6 11l6 6 6-6M5 20h14" />,
+  star: <Path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3z" />,
   refresh: <Path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4" />,
 };
 
 export type IconName = keyof typeof icons;
 
-type Props = { name: IconName; color?: ColorName; size?: number; strokeWidth?: number };
+type Props = { name: IconName; color?: ColorName; size?: number; strokeWidth?: number; filled?: boolean };
 
-export function Icon({ name, color = 'muted', size = 20, strokeWidth = 1.75 }: Props) {
+export function Icon({ name, color = 'muted', size = 20, strokeWidth = 1.75, filled }: Props) {
   const { colors } = useTheme();
   return (
     <Svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={filled ? colors[color] : 'none'}
       stroke={colors[color]}
       strokeWidth={strokeWidth}
       strokeLinecap="round"

@@ -2,9 +2,9 @@ import { Pressable } from 'react-native';
 import { useTheme, type ColorName } from '../theme';
 import { Icon, type IconName } from './Icon';
 
-type Props = { icon: IconName; label: string; onPress: () => void; color?: ColorName };
+type Props = { icon: IconName; label: string; onPress: () => void; color?: ColorName; filled?: boolean };
 
-export function IconButton({ icon, label, onPress, color }: Props) {
+export function IconButton({ icon, label, onPress, color, filled }: Props) {
   const { tw, colors } = useTheme();
   return (
     <Pressable
@@ -14,7 +14,7 @@ export function IconButton({ icon, label, onPress, color }: Props) {
       android_ripple={{ color: colors.raised, borderless: true, radius: 22 }}
       style={tw`h-11 w-11 items-center justify-center`}
     >
-      <Icon name={icon} color={color} />
+      <Icon name={icon} color={color} filled={filled} />
     </Pressable>
   );
 }

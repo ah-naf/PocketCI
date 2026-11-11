@@ -9,6 +9,7 @@ import { ProviderSwitchSheet } from '../components/ProviderSwitchSheet';
 import { Screen } from '../components/Screen';
 import { SearchList } from '../components/SearchList';
 import { SectionHeader } from '../components/SectionHeader';
+import { useFavoriteProjects } from '../hooks/useFavoriteProjects';
 import { useProviderHost } from '../hooks/useProviderHost';
 import { useRecentProjects } from '../hooks/useRecentProjects';
 import { useSearchPage } from '../hooks/useSearchPage';
@@ -30,6 +31,7 @@ export function ProjectsScreen({ navigation }: Props) {
   const plural = provider.labels.projects.toLowerCase();
   const host = useProviderHost();
   const recent = useRecentProjects(provider.id);
+  const { favorites, toggle: toggleFavorite } = useFavoriteProjects(provider.id);
   const themeToggle = useThemeToggle();
   const [switchOpen, setSwitchOpen] = useState(false);
 
@@ -59,6 +61,8 @@ export function ProjectsScreen({ navigation }: Props) {
       subtitle={project.path}
       tag={project.key === project.path ? undefined : project.key}
       onPress={() => openProject(project)}
+      favorite={favorites.some(({ key }) => key === project.key)}
+      onToggleFavorite={() => toggleFavorite(project)}
     />
   );
 
@@ -86,6 +90,7 @@ export function ProjectsScreen({ navigation }: Props) {
           label={`Switch to ${themeToggle.nextScheme} theme`}
           onPress={themeToggle.toggle}
         />
+        <IconButton icon="star" label="Favorites dashboard" onPress={() => navigation.navigate('Dashboard')} />
         <IconButton icon="sliders" label="Settings" onPress={() => navigation.navigate('Settings')} />
       </View>
       <View style={tw`border-b border-line px-4 pb-3.5 pt-6`}>

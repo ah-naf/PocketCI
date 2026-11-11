@@ -2,6 +2,7 @@ import { Pressable, View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
+import { IconButton } from './IconButton';
 
 type Props = {
   title: string;
@@ -11,9 +12,11 @@ type Props = {
   monoTitle?: boolean;
   onPress?: () => void;
   onLongPress?: () => void;
+  favorite?: boolean;
+  onToggleFavorite?: () => void;
 };
 
-export function ListRow({ title, subtitle, tag, accentTag, monoTitle, onPress, onLongPress }: Props) {
+export function ListRow({ title, subtitle, tag, accentTag, monoTitle, onPress, onLongPress, favorite, onToggleFavorite }: Props) {
   const { tw, colors } = useTheme();
   return (
     <Pressable
@@ -52,6 +55,15 @@ export function ListRow({ title, subtitle, tag, accentTag, monoTitle, onPress, o
             {tag}
           </AppText>
         </View>
+      )}
+      {onToggleFavorite && (
+        <IconButton
+          icon="star"
+          filled={favorite}
+          color={favorite ? 'accent' : 'dim'}
+          label={favorite ? 'Remove from favorites' : 'Add to favorites'}
+          onPress={onToggleFavorite}
+        />
       )}
       <Icon name="chevronRight" color="dim" size={18} />
     </Pressable>
