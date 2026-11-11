@@ -1,17 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
 import { fetchBranches, fetchProject } from '../api/projects';
-import { EmptyState } from '../components/EmptyState';
-import { ErrorView } from '../components/ErrorView';
-import { Input } from '../components/Input';
 import { ListRow } from '../components/ListRow';
-import { LoadingRow } from '../components/LoadingRow';
 import { Screen } from '../components/Screen';
-import { useDebounce } from '../hooks/useDebounce';
-import { usePaginated } from '../hooks/usePaginated';
+import { SearchList } from '../components/SearchList';
+import { useSearchPage } from '../hooks/useSearchPage';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { useTheme } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Branches'>;
 
@@ -19,10 +13,7 @@ type BranchRow = { name: string; isDefault: boolean };
 
 export function BranchesScreen({ navigation, route }: Props) {
   const { projectId, projectName } = route.params;
-  const { tw, colors } = useTheme();
-  const [search, setSearch] = useState('');
   const [defaultBranch, setDefaultBranch] = useState<string | null>(null);
-  const query = useDebounce(search.trim(), 300);
 
   useEffect(() => {
     fetchProject(projectId).then(
@@ -31,11 +22,11 @@ export function BranchesScreen({ navigation, route }: Props) {
     );
   }, [projectId]);
 
-  const fetchPage = useCallback(
-    (page: number) => fetchBranches(projectId, query, page),
-    [projectId, query],
+  const fetchWithQuery = useCallback(
+    (query: string, page: number) => fetchBranches(projectId, query, page),
+    [projectId],
   );
-  const { items, busy, error, refresh, loadMore } = usePaginated(fetchPage);
+  const { search, setSearch, query, items, busy, error, refresh, loadMore } = useSearchPage(fetchWithQuery);
 
   const showPinned = defaultBranch !== null && defaultBranch.toLowerCase().includes(query.toLowerCase());
   const rows: BranchRow[] = [
@@ -45,53 +36,28 @@ export function BranchesScreen({ navigation, route }: Props) {
 
   return (
     <Screen title="Branches" subtitle={projectName} onBack={navigation.goBack}>
-      <View style={tw`border-b border-line px-4 py-3`}>
-        <Input
-          accessibilityLabel="Search branches"
-          placeholder="Search branches"
-          value={search}
-          onChangeText={setSearch}
-          clearButtonMode="while-editing"
-        />
-      </View>
-      <FlatList
+      <SearchList
         data={rows}
         keyExtractor={(row) => row.name}
-        keyboardShouldPersistTaps="handled"
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        refreshControl={
-          <RefreshControl
-            refreshing={busy === 'refresh'}
-            onRefresh={refresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
-            progressBackgroundColor={colors.card}
-          />
-        }
-        renderItem={({ item }) => (
+        renderItem={(row) => (
           <ListRow
-            title={item.name}
+            title={row.name}
             monoTitle
-            tag={item.isDefault ? 'default' : undefined}
+            tag={row.isDefault ? 'default' : undefined}
             accentTag
-            onPress={() => navigation.navigate('Branch', { projectId, projectName, branch: item.name })}
+            onPress={() => navigation.navigate('Branch', { projectId, projectName, branch: row.name })}
           />
         )}
-        ListEmptyComponent={
-          busy === 'initial' ? (
-            <LoadingRow label="Loading branches" />
-          ) : error ? undefined : (
-            <EmptyState title="No branches found" hint="Try a different search." />
-          )
-        }
-        ListFooterComponent={
-          busy === 'more' ? (
-            <LoadingRow label="Loading more" />
-          ) : error ? (
-            <ErrorView error={error} onRetry={refresh} />
-          ) : undefined
-        }
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search branches"
+        busy={busy}
+        error={error}
+        onRefresh={refresh}
+        onEndReached={loadMore}
+        loadingLabel="Loading branches"
+        emptyTitle="No branches found"
+        emptyHint="Try a different search."
       />
     </Screen>
   );
