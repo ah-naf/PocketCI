@@ -1,8 +1,9 @@
 import type { ReactElement } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { describeError } from '../api/errors';
 import type { Busy } from '../hooks/usePaginated';
 import { useTheme } from '../theme';
+import { AppRefreshControl } from './AppRefreshControl';
 import { EmptyState } from './EmptyState';
 import { ErrorView } from './ErrorView';
 import { Input } from './Input';
@@ -39,7 +40,7 @@ export function SearchList<T>({
   emptyTitle,
   emptyHint,
 }: Props<T>) {
-  const { tw, colors } = useTheme();
+  const { tw } = useTheme();
   return (
     <>
       <View style={tw`border-b border-line px-4 py-3`}>
@@ -57,15 +58,7 @@ export function SearchList<T>({
         keyboardShouldPersistTaps="handled"
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
-        refreshControl={
-          <RefreshControl
-            refreshing={busy === 'refresh'}
-            onRefresh={onRefresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
-            progressBackgroundColor={colors.card}
-          />
-        }
+        refreshControl={<AppRefreshControl refreshing={busy === 'refresh'} onRefresh={onRefresh} />}
         renderItem={({ item }) => renderItem(item)}
         ListEmptyComponent={
           busy === 'initial' ? (

@@ -6,19 +6,20 @@ import { Header } from './Header';
 
 type Props = {
   title?: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   monoTitle?: boolean;
+  headerRight?: ReactNode;
   onBack?: () => void;
   scroll?: boolean;
   refreshControl?: ReactElement<RefreshControlProps>;
   children: ReactNode;
 };
 
-export function Screen({ title, subtitle, monoTitle, onBack, scroll, refreshControl, children }: Props) {
+export function Screen({ title, subtitle, monoTitle, headerRight, onBack, scroll, refreshControl, children }: Props) {
   const { tw } = useTheme();
   return (
     <SafeAreaView style={tw`flex-1 bg-bg`}>
-      {title && <Header title={title} subtitle={subtitle} monoTitle={monoTitle} onBack={onBack} />}
+      {title && <Header title={title} subtitle={subtitle} monoTitle={monoTitle} right={headerRight} onBack={onBack} />}
       {scroll ? (
         <ScrollView
           contentContainerStyle={tw`grow`}

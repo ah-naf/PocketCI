@@ -65,3 +65,13 @@ export function useTheme() {
   const scheme = useColorScheme() === 'light' ? 'light' : 'dark';
   return { tw: themes[scheme], colors: palettes[scheme], scheme };
 }
+
+export const terminal = {
+  text: '#D5DBE0',
+  gutter: '#5C6772',
+  accent: '#C6F432',
+  warning: '#F5A43C',
+  success: '#3FCF8E',
+  error: '#FF9AA2',
+  errorBackground: '#F0616D29',
+};

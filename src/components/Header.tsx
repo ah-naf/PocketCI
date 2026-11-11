@@ -1,10 +1,17 @@
+import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 
-type Props = { title: string; subtitle?: string; monoTitle?: boolean; onBack?: () => void };
+type Props = {
+  title: string;
+  subtitle?: ReactNode;
+  monoTitle?: boolean;
+  right?: ReactNode;
+  onBack?: () => void;
+};
 
-export function Header({ title, subtitle, monoTitle, onBack }: Props) {
+export function Header({ title, subtitle, monoTitle, right, onBack }: Props) {
   const { tw } = useTheme();
   return (
     <View style={tw`min-h-14 flex-row items-center px-1.5 border-b border-line`}>
@@ -24,12 +31,15 @@ export function Header({ title, subtitle, monoTitle, onBack }: Props) {
         <AppText variant="title" mono={monoTitle} numberOfLines={1} style={monoTitle ? tw`text-[15px]` : undefined}>
           {title}
         </AppText>
-        {subtitle && (
+        {typeof subtitle === 'string' ? (
           <AppText variant="small" mono={!monoTitle} numberOfLines={1} style={tw`text-xs leading-4`}>
             {subtitle}
           </AppText>
+        ) : (
+          subtitle
         )}
       </View>
+      {right}
     </View>
   );
 }
