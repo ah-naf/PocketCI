@@ -4,8 +4,13 @@ Personal mobile app (Expo, React Native, TypeScript) for a self-hosted GitLab. I
 
 ## Status
 
-Done: token setup, Settings, API client, theme and shared components.
-Planned: projects and branches, pipeline form and trigger, pipeline status, jobs and job logs.
+Features:
+- Token setup and Settings
+- Project list with search (projects the token's user is a member of)
+- Searchable branch list
+- Pipeline form from the branch's CI variables, and trigger
+- Live pipeline status with jobs grouped by stage
+- Job logs with live follow, copy, and a last-2000-lines view
 
 ## Requirements
 

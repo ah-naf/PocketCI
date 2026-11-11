@@ -2,6 +2,8 @@ import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BranchScreen } from '../screens/BranchScreen';
 import { BranchesScreen } from '../screens/BranchesScreen';
+import { JobLogScreen } from '../screens/JobLogScreen';
+import { PipelineScreen } from '../screens/PipelineScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { SetupScreen } from '../screens/SetupScreen';
@@ -13,6 +15,8 @@ export type RootStackParamList = {
   Settings: undefined;
   Branches: { projectId: number; projectName: string };
   Branch: { projectId: number; projectName: string; branch: string };
+  Pipeline: { projectId: number; projectName: string; pipelineId: number };
+  JobLog: { projectId: number; jobId: number; jobName: string; status: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -40,6 +44,8 @@ export function RootNavigator({ initialRouteName }: { initialRouteName: keyof Ro
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Branches" component={BranchesScreen} />
         <Stack.Screen name="Branch" component={BranchScreen} />
+        <Stack.Screen name="Pipeline" component={PipelineScreen} />
+        <Stack.Screen name="JobLog" component={JobLogScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,9 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
-import { RefreshControl, View } from 'react-native';
+import { View } from 'react-native';
 import { fetchCiVariables } from '../api/ciVariables';
 import { describeError } from '../api/errors';
-import { createPipeline, fetchPipelines, type CreatedPipeline } from '../api/pipelines';
+import { createPipeline, fetchPipelines } from '../api/pipelines';
+import { AppRefreshControl } from '../components/AppRefreshControl';
 import { AppText } from '../components/AppText';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
@@ -25,11 +26,10 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Branch'>;
 
 export function BranchScreen({ navigation, route }: Props) {
   const { projectId, projectName, branch } = route.params;
-  const { tw, colors } = useTheme();
+  const { tw } = useTheme();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [runError, setRunError] = useState<unknown>();
-  const [created, setCreated] = useState<CreatedPipeline>();
 
   const loadVariables = useCallback(() => fetchCiVariables(projectId, branch), [projectId, branch]);
   const loadPipelines = useCallback(() => fetchPipelines(projectId, branch), [projectId, branch]);
@@ -37,12 +37,16 @@ export function BranchScreen({ navigation, route }: Props) {
   const pipelines = useAsync(loadPipelines);
   const form = usePipelineForm(ci.data?.variables);
 
+  const openPipeline = (pipelineId: number) =>
+    navigation.navigate('Pipeline', { projectId, projectName, pipelineId });
+
   async function runPipeline() {
     setSubmitting(true);
     setRunError(undefined);
     try {
-      setCreated(await createPipeline(projectId, branch, form.entries));
-      pipelines.reload();
+      const created = await createPipeline(projectId, branch, form.entries);
+      pipelines.poll();
+      openPipeline(created.id);
     } catch (error) {
       setRunError(error);
     } finally {
@@ -62,15 +66,12 @@ export function BranchScreen({ navigation, route }: Props) {
       onBack={navigation.goBack}
       scroll
       refreshControl={
-        <RefreshControl
+        <AppRefreshControl
           refreshing={ci.refreshing || pipelines.refreshing}
           onRefresh={() => {
             ci.reload();
             pipelines.reload();
           }}
-          tintColor={colors.accent}
-          colors={[colors.accent]}
-          progressBackgroundColor={colors.card}
         />
       }
     >
@@ -105,9 +106,6 @@ export function BranchScreen({ navigation, route }: Props) {
           onRemove={form.removeCustom}
         />
         {runFailure && <Banner variant="failed" {...runFailure} />}
-        {created && (
-          <Banner variant="success" title={`Pipeline #${created.id} created`} message={`Status: ${created.status}`} />
-        )}
         <Button
           variant="primary"
           label="Run pipeline"
@@ -132,6 +130,7 @@ export function BranchScreen({ navigation, route }: Props) {
           status={pipeline.status}
           ago={formatRelativeTime(pipeline.created_at)}
           duration={formatPipelineDuration(pipeline.created_at, pipeline.updated_at, pipeline.status)}
+          onPress={() => openPipeline(pipeline.id)}
         />
       ))}
 

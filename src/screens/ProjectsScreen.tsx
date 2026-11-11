@@ -1,10 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { fetchProjects } from '../api/projects';
 import { AppText } from '../components/AppText';
 import { ListRow } from '../components/ListRow';
 import { Screen } from '../components/Screen';
 import { SearchList } from '../components/SearchList';
+import { TextButton } from '../components/TextButton';
 import { useGitlabHost } from '../hooks/useGitlabHost';
 import { useSearchPage } from '../hooks/useSearchPage';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -23,15 +24,7 @@ export function ProjectsScreen({ navigation }: Props) {
         <AppText variant="small" mono numberOfLines={1} style={tw`flex-1 text-xs`}>
           {host}
         </AppText>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('Settings')}
-          style={tw`h-11 justify-center px-3`}
-        >
-          <AppText variant="small" tone="accent" style={tw`font-sans-semibold`}>
-            Settings
-          </AppText>
-        </Pressable>
+        <TextButton label="Settings" onPress={() => navigation.navigate('Settings')} />
       </View>
       <View style={tw`border-b border-line px-4 pb-3.5 pt-6`}>
         <AppText variant="display">Projects</AppText>
