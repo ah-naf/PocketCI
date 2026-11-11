@@ -1,5 +1,6 @@
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { BranchScreen } from '../screens/BranchScreen';
 import { BranchesScreen } from '../screens/BranchesScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
@@ -11,6 +12,7 @@ export type RootStackParamList = {
   Projects: undefined;
   Settings: undefined;
   Branches: { projectId: number; projectName: string };
+  Branch: { projectId: number; projectName: string; branch: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -37,6 +39,7 @@ export function RootNavigator({ initialRouteName }: { initialRouteName: keyof Ro
         <Stack.Screen name="Projects" component={ProjectsScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Branches" component={BranchesScreen} />
+        <Stack.Screen name="Branch" component={BranchScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -70,7 +70,13 @@ export function BranchesScreen({ navigation, route }: Props) {
           />
         }
         renderItem={({ item }) => (
-          <ListRow title={item.name} monoTitle tag={item.isDefault ? 'default' : undefined} accentTag />
+          <ListRow
+            title={item.name}
+            monoTitle
+            tag={item.isDefault ? 'default' : undefined}
+            accentTag
+            onPress={() => navigation.navigate('Branch', { projectId, projectName, branch: item.name })}
+          />
         )}
         ListEmptyComponent={
           busy === 'initial' ? (
