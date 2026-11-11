@@ -1,4 +1,4 @@
-const ANSI_PATTERN = /\u001b\[[0-9;?]*[ -/]*[@-~]/g;
+export const ANSI_PATTERN = /\u001b\[[0-9;?]*[ -/]*[@-~]/g;
 const SECTION_PATTERN = /section_(?:start|end):\d+:\S*/g;
 const TIMESTAMP_PREFIX = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z \d{2}[OE](\+?) ?/;
 

@@ -1,20 +1,20 @@
-export type GitlabErrorKind = 'http' | 'timeout' | 'network';
+export type ApiErrorKind = 'http' | 'timeout' | 'network';
 
-export class GitlabError extends Error {
+export class ApiError extends Error {
   constructor(
-    readonly kind: GitlabErrorKind,
+    readonly kind: ApiErrorKind,
     readonly status: number,
     message: string,
   ) {
     super(message);
-    this.name = 'GitlabError';
+    this.name = 'ApiError';
   }
 }
 
 export type FriendlyError = { title: string; message: string; detail?: string };
 
 export function describeError(error: unknown, service = 'GitLab'): FriendlyError {
-  if (!(error instanceof GitlabError)) {
+  if (!(error instanceof ApiError)) {
     return {
       title: 'Something went wrong',
       message: error instanceof Error ? error.message : String(error),

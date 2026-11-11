@@ -1,4 +1,4 @@
-import { GitlabError } from './errors';
+import { ApiError } from './errors';
 import { gitlabRequest } from './gitlabClient';
 
 export type TraceChunk = { text: string; nextOffset: number; replace: boolean };
@@ -19,7 +19,7 @@ export async function fetchTrace(projectId: number, jobId: number, offset: numbe
     // shortcut: a multi-byte character split across two chunks is decoded wrongly, reload the log to fix it.
     return { text, nextOffset: Number.isNaN(end) ? offset + byteLength(text) : end + 1, replace: false };
   } catch (error) {
-    if (error instanceof GitlabError && error.status === 416) {
+    if (error instanceof ApiError && error.status === 416) {
       return { text: '', nextOffset: offset, replace: false };
     }
     throw error;

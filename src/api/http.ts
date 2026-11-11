@@ -1,6 +1,13 @@
-import { GitlabError } from './errors';
+import { ApiError } from './errors';
 
 const TIMEOUT_MS = 15000;
+
+export function buildQuery(params: Record<string, string | number | undefined>) {
+  const parts = Object.entries(params)
+    .filter(([, value]) => value !== undefined && value !== '')
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+  return parts.length ? `?${parts.join('&')}` : '';
+}
 
 export type HttpRequest = {
   method?: 'GET' | 'POST';
@@ -17,7 +24,7 @@ async function fetchWithTimeout(url: string, init: RequestInit) {
     return await fetch(url, { ...init, signal: controller.signal });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Request failed';
-    throw new GitlabError(controller.signal.aborted ? 'timeout' : 'network', 0, message);
+    throw new ApiError(controller.signal.aborted ? 'timeout' : 'network', 0, message);
   } finally {
     clearTimeout(timer);
   }
@@ -45,7 +52,7 @@ export async function httpRequest(url: string, { method = 'GET', headers, body }
   });
   const text = await response.text();
   if (!response.ok) {
-    throw new GitlabError('http', response.status, readErrorMessage(text, response.statusText));
+    throw new ApiError('http', response.status, readErrorMessage(text, response.statusText));
   }
   return { text, headers: response.headers, status: response.status };
 }

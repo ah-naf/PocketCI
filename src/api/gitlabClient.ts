@@ -1,24 +1,18 @@
 import type { Credentials, Page } from '../providers/types';
 import { DEFAULT_BASE_URL, loadCredentials } from '../storage/secure';
-import { GitlabError } from './errors';
-import { httpRequest, type HttpRequest, type HttpResponse } from './http';
+import { ApiError } from './errors';
+import { buildQuery, httpRequest, type HttpRequest, type HttpResponse } from './http';
 
+export { buildQuery };
 export type { Page };
 
 type RequestOptions = HttpRequest & { auth?: Credentials };
 
 export type GitlabResponse = HttpResponse;
 
-export function buildQuery(params: Record<string, string | number | undefined>) {
-  const parts = Object.entries(params)
-    .filter(([, value]) => value !== undefined && value !== '')
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
-  return parts.length ? `?${parts.join('&')}` : '';
-}
-
 async function getStoredAuth(): Promise<Credentials> {
   const credentials = await loadCredentials('gitlab', DEFAULT_BASE_URL);
-  if (!credentials.token) throw new GitlabError('http', 401, 'No access token set');
+  if (!credentials.token) throw new ApiError('http', 401, 'No access token set');
   return credentials;
 }
 
