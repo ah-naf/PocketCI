@@ -64,6 +64,6 @@ export type ProviderLabels = {
   target: string;
 };
 
-export type ProviderCapabilities = { cancelJob: boolean; liveLogs: boolean; forceCancelRun: boolean };
+export type ProviderCapabilities = { cancelJob: boolean; liveLogs: boolean; forceCancelRun: boolean; playJob: boolean };
 
 export type ProviderSetup = { editableBaseUrl: boolean; defaultBaseUrl: string; tokenHint: string };

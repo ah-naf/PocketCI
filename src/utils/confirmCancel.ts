@@ -1,5 +1,4 @@
-import { Alert } from 'react-native';
-import { describeError } from '../api/errors';
+import { confirmAction } from './confirmAction';
 
 export function confirmCancel(
   noun: string,
@@ -8,24 +7,17 @@ export function confirmCancel(
   onDone: () => void,
   force = false,
 ) {
-  const title = force ? `Force cancel this ${noun}?` : `Cancel this ${noun}?`;
-  const message = force
-    ? `${service} stops the ${noun} immediately and skips cleanup steps such as always(). Use this only when a normal cancel does not work.`
-    : `${service} stops the ${noun} and it can't be resumed.`;
-  Alert.alert(title, message, [
-    { text: 'Keep running', style: 'cancel' },
+  confirmAction(
     {
-      text: force ? 'Force cancel' : `Cancel ${noun}`,
-      style: 'destructive',
-      onPress: async () => {
-        try {
-          await cancel();
-          onDone();
-        } catch (error) {
-          const { title: errorTitle, message: errorMessage } = describeError(error);
-          Alert.alert(errorTitle, errorMessage);
-        }
-      },
+      title: force ? `Force cancel this ${noun}?` : `Cancel this ${noun}?`,
+      message: force
+        ? `${service} stops the ${noun} immediately and skips cleanup steps such as always(). Use this only when a normal cancel does not work.`
+        : `${service} stops the ${noun} and it can't be resumed.`,
+      confirmLabel: force ? 'Force cancel' : `Cancel ${noun}`,
+      dismissLabel: 'Keep running',
+      destructive: true,
     },
-  ]);
+    cancel,
+    onDone,
+  );
 }

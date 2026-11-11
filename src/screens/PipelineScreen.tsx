@@ -1,4 +1,4 @@
-import { useIsFocused } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useMemo } from 'react';
 import { Linking, View } from 'react-native';
@@ -35,6 +35,13 @@ export function PipelineScreen({ navigation, route }: Props) {
   const loadJobs = useCallback(() => provider.listJobs(project, runId), [provider, project, runId]);
   const run = useAsync(loadRun);
   const jobs = useAsync(loadJobs);
+
+  useFocusEffect(
+    useCallback(() => {
+      run.poll();
+      jobs.poll();
+    }, [run.poll, jobs.poll]),
+  );
 
   const active = run.data ? isPipelineActive(run.data.status) : true;
   const now = useNow(active);

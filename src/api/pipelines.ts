@@ -54,6 +54,10 @@ export function cancelPipeline(projectId: number, pipelineId: number) {
   return getJson<Pipeline>(`/projects/${projectId}/pipelines/${pipelineId}/cancel`, { method: 'POST' });
 }
 
+export function playJob(projectId: number, jobId: number) {
+  return getJson<Job>(`/projects/${projectId}/jobs/${jobId}/play`, { method: 'POST' });
+}
+
 export function cancelJob(projectId: number, jobId: number) {
   return getJson<Job>(`/projects/${projectId}/jobs/${jobId}/cancel`, { method: 'POST' });
 }

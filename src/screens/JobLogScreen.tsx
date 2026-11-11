@@ -21,6 +21,7 @@ import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
+import { confirmAction } from '../utils/confirmAction';
 import { confirmCancel } from '../utils/confirmCancel';
 import { formatJobDuration } from '../utils/format';
 import { MAX_LOG_LINES, toLogLines } from '../utils/log';
@@ -63,6 +64,21 @@ export function JobLogScreen({ navigation, route }: Props) {
   const skipped = showFull ? 0 : Math.max(0, allLines.length - MAX_LOG_LINES);
   const lines = useMemo(() => toLogLines(allLines, skipped), [allLines, skipped]);
 
+  const playManualJob = () =>
+    confirmAction(
+      {
+        title: 'Run this job?',
+        message: `${provider.displayName} starts the job now.`,
+        confirmLabel: 'Run job',
+        dismissLabel: 'Not now',
+      },
+      () => provider.playJob(project, jobId),
+      () => {
+        job.poll();
+        log.poll();
+      },
+    );
+
   const cancelRunningJob = () =>
     confirmCancel('job', provider.displayName, () => provider.cancelJob(project, jobId), () => {
       job.poll();
@@ -97,6 +113,9 @@ export function JobLogScreen({ navigation, route }: Props) {
         </>
       }
     >
+      {status === 'manual' && provider.capabilities.playJob && (
+        <NoticeBar text="This job waits for a manual start." actionLabel="Run job" onAction={playManualJob} />
+      )}
       {live && status !== 'canceling' && provider.capabilities.cancelJob && <NoticeBar text="This job is running." actionLabel="Cancel job" danger onAction={cancelRunningJob} />}
       {skipped > 0 && (
         <NoticeBar

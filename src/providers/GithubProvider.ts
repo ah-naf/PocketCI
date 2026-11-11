@@ -92,7 +92,7 @@ export class GithubProvider extends CiProvider {
     runs: 'workflow runs',
     target: 'workflow',
   };
-  readonly capabilities = { cancelJob: false, liveLogs: false, forceCancelRun: true };
+  readonly capabilities = { cancelJob: false, liveLogs: false, forceCancelRun: true, playJob: false };
   readonly setup = {
     editableBaseUrl: false,
     defaultBaseUrl: 'https://api.github.com',

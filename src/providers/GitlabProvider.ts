@@ -7,6 +7,7 @@ import {
   fetchJobs,
   fetchPipeline,
   fetchPipelines,
+  playJob,
   type Job as GitlabJob,
   type Pipeline,
 } from '../api/pipelines';
@@ -64,7 +65,7 @@ export class GitlabProvider extends CiProvider {
     runs: 'pipelines',
     target: 'pipeline',
   };
-  readonly capabilities = { cancelJob: true, liveLogs: true, forceCancelRun: false };
+  readonly capabilities = { cancelJob: true, liveLogs: true, forceCancelRun: false, playJob: true };
   readonly setup = {
     editableBaseUrl: true,
     defaultBaseUrl: DEFAULT_BASE_URL,
@@ -153,6 +154,10 @@ export class GitlabProvider extends CiProvider {
 
   async cancelRun(project: ProjectRef, runId: string) {
     await cancelPipeline(Number(project.key), Number(runId));
+  }
+
+  async playJob(project: ProjectRef, jobId: string) {
+    await playJob(Number(project.key), Number(jobId));
   }
 
   async cancelJob(project: ProjectRef, jobId: string) {

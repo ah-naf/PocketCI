@@ -47,6 +47,10 @@ export abstract class CiProvider {
     return Promise.reject(new Error(`Force cancel is not supported (${project.key}, ${runId})`));
   }
 
+  playJob(project: ProjectRef, jobId: string): Promise<void> {
+    return Promise.reject(new Error(`Starting a manual job is not supported (${project.key}, ${jobId})`));
+  }
+
   cancelJob(project: ProjectRef, jobId: string): Promise<void> {
     return Promise.reject(new Error(`Cancelling a single job is not supported (${project.key}, ${jobId})`));
   }
