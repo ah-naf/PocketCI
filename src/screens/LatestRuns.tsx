@@ -48,7 +48,7 @@ export function LatestRuns({ project, onOpenRun }: Props) {
       renderItem={({ item }) => (
         <PipelineRow
           id={item.id}
-          title={item.title}
+          title={[item.source, item.title].filter(Boolean).join(' · ')}
           branch={item.ref}
           status={item.status}
           ago={formatRelativeTime(item.createdAt)}

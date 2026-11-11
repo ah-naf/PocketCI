@@ -28,6 +28,7 @@ export type RunSummary = {
   id: string;
   title: string;
   ref: string;
+  source: string;
   status: RunStatus;
   createdAt: string;
   updatedAt: string;
@@ -43,6 +44,9 @@ export type Run = {
   startedAt: string | null;
   finishedAt: string | null;
   durationSeconds: number | null;
+  triggeredBy: string | null;
+  source: string | null;
+  commitTitle: string | null;
 };
 
 export type Job = {
@@ -52,8 +56,12 @@ export type Job = {
   status: RunStatus;
   durationSeconds: number | null;
   startedAt: string | null;
+  finishedAt: string | null;
+  runnerName: string | null;
   webUrl: string;
 };
+
+export type RunVariable = { key: string; value: string };
 
 export type LogChunk = { text: string; cursor: string | null; replace: boolean };
 
@@ -67,6 +75,6 @@ export type ProviderLabels = {
   target: string;
 };
 
-export type ProviderCapabilities = { cancelJob: boolean; liveLogs: boolean; forceCancelRun: boolean; playJob: boolean };
+export type ProviderCapabilities = { cancelJob: boolean; liveLogs: boolean; forceCancelRun: boolean; playJob: boolean; runVariables: boolean };
 
 export type ProviderSetup = { editableBaseUrl: boolean; defaultBaseUrl: string; tokenHint: string };

@@ -12,6 +12,7 @@ import type {
   RunFilter,
   RunOptions,
   RunSummary,
+  RunVariable,
   StartRunRequest,
 } from './types';
 
@@ -43,6 +44,7 @@ export abstract class CiProvider {
   abstract getRun(project: ProjectRef, runId: string): Promise<Run>;
   abstract listJobs(project: ProjectRef, runId: string): Promise<Job[]>;
   abstract getJob(project: ProjectRef, jobId: string): Promise<Job>;
+  abstract getRunVariables(project: ProjectRef, runId: string): Promise<RunVariable[]>;
 
   abstract readLog(project: ProjectRef, jobId: string, cursor: string | null): Promise<LogChunk>;
   abstract cleanLog(raw: string): string[];

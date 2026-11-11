@@ -33,3 +33,11 @@ export function formatPipelineDuration(createdAt: string, updatedAt: string, sta
   if (!FINISHED_STATUSES.includes(status)) return '—';
   return formatDuration((Date.parse(updatedAt) - Date.parse(createdAt)) / 1000);
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function formatDateTime(isoDate: string) {
+  const date = new Date(isoDate);
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}

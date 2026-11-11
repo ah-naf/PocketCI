@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { NoticeBar } from '../components/NoticeBar';
+import { DetailsCard } from '../components/DetailsCard';
 import { ErrorView } from '../components/ErrorView';
 import { IconButton } from '../components/IconButton';
 import { LiveBadge } from '../components/LiveBadge';
@@ -23,9 +24,10 @@ import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
+import { getStatusStyle } from '../theme/status';
 import { confirmAction } from '../utils/confirmAction';
 import { confirmCancel } from '../utils/confirmCancel';
-import { formatJobDuration } from '../utils/format';
+import { formatDateTime, formatJobDuration } from '../utils/format';
 import { MAX_LOG_LINES, toLogLines } from '../utils/log';
 import { isJobActive } from '../utils/status';
 
@@ -41,6 +43,7 @@ export function JobLogScreen({ navigation, route }: Props) {
   const [showFull, setShowFull] = useState(false);
   const [copied, setCopied] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const loadJob = useCallback(() => provider.getJob(project, jobId), [provider, project, jobId]);
   const job = useAsync(loadJob);
@@ -134,6 +137,12 @@ export function JobLogScreen({ navigation, route }: Props) {
           {live && provider.capabilities.liveLogs && <LiveBadge />}
           {!provider.capabilities.liveLogs && <IconButton icon="refresh" label="Refresh log" onPress={log.reload} />}
           <IconButton
+            icon="info"
+            label="Job details"
+            color={detailsOpen ? 'accent' : 'muted'}
+            onPress={() => setDetailsOpen(!detailsOpen)}
+          />
+          <IconButton
             icon="search"
             label="Search log"
             color={searchOpen ? 'accent' : 'muted'}
@@ -149,6 +158,19 @@ export function JobLogScreen({ navigation, route }: Props) {
         </>
       }
     >
+      {detailsOpen && job.data && (
+        <View style={tw`border-b border-line px-4 py-3`}>
+          <DetailsCard
+            rows={[
+              { label: 'Status', value: getStatusStyle(status).label },
+              { label: 'Duration', value: formatJobDuration(job.data, now) },
+              { label: 'Runner', value: job.data.runnerName },
+              { label: 'Started', value: job.data.startedAt ? formatDateTime(job.data.startedAt) : null },
+              { label: 'Finished', value: job.data.finishedAt ? formatDateTime(job.data.finishedAt) : null },
+            ]}
+          />
+        </View>
+      )}
       {searchOpen && (
         <LogSearchBar
           query={nav.query}

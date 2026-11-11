@@ -6,6 +6,7 @@ import {
   fetchJob,
   fetchJobs,
   fetchPipeline,
+  fetchPipelineVariables,
   fetchPipelines,
   playJob,
   retryJob,
@@ -46,6 +47,9 @@ const toRun = (pipeline: Pipeline): Run => ({
   startedAt: pipeline.started_at,
   finishedAt: pipeline.finished_at,
   durationSeconds: pipeline.duration,
+  triggeredBy: pipeline.user ? pipeline.user.name || pipeline.user.username : null,
+  source: pipeline.source,
+  commitTitle: null,
 });
 
 const toJob = (job: GitlabJob): Job => ({
@@ -55,6 +59,8 @@ const toJob = (job: GitlabJob): Job => ({
   status: job.status,
   durationSeconds: job.duration,
   startedAt: job.started_at,
+  finishedAt: job.finished_at,
+  runnerName: job.runner?.description ?? null,
   webUrl: job.web_url,
 });
 
@@ -75,7 +81,7 @@ export class GitlabProvider extends CiProvider {
     runs: 'pipelines',
     target: 'pipeline',
   };
-  readonly capabilities = { cancelJob: true, liveLogs: true, forceCancelRun: false, playJob: true };
+  readonly capabilities = { cancelJob: true, liveLogs: true, forceCancelRun: false, playJob: true, runVariables: true };
   readonly setup = {
     editableBaseUrl: true,
     defaultBaseUrl: DEFAULT_BASE_URL,
@@ -134,10 +140,11 @@ export class GitlabProvider extends CiProvider {
     const result = await fetchPipelines(Number(project.key), branch ?? undefined, GITLAB_STATUS[filter], page);
     return {
       ...result,
-      items: result.items.map(({ id, ref, status, created_at, updated_at }) => ({
+      items: result.items.map(({ id, ref, source, status, created_at, updated_at }) => ({
         id: String(id),
         title: '',
         ref,
+        source,
         status,
         createdAt: created_at,
         updatedAt: updated_at,
@@ -151,6 +158,10 @@ export class GitlabProvider extends CiProvider {
 
   async listJobs(project: ProjectRef, runId: string) {
     return (await fetchJobs(Number(project.key), Number(runId))).map(toJob);
+  }
+
+  async getRunVariables(project: ProjectRef, runId: string) {
+    return fetchPipelineVariables(Number(project.key), Number(runId));
   }
 
   async getJob(project: ProjectRef, jobId: string) {

@@ -17,6 +17,9 @@ export type GithubRun = {
   created_at: string;
   run_started_at?: string;
   updated_at: string;
+  event: string;
+  actor?: { login: string } | null;
+  head_commit?: { message: string } | null;
 };
 
 export type GithubJob = {
@@ -26,6 +29,7 @@ export type GithubJob = {
   conclusion: string | null;
   started_at: string | null;
   completed_at: string | null;
+  runner_name: string | null;
   html_url: string;
 };
 

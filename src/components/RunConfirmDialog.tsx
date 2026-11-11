@@ -3,6 +3,7 @@ import type { VariableEntry } from '../hooks/usePipelineForm';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
+import { VariableList } from './VariableList';
 
 type Props = {
   visible: boolean;
@@ -56,30 +57,7 @@ export function RunConfirmDialog({
           <View style={tw`gap-1.5`}>
             <AppText variant="label">Variables · {entries.length}</AppText>
             <ScrollView style={tw`max-h-64 overflow-hidden rounded-xl border border-line bg-bg`}>
-              {entries.length === 0 && (
-                <AppText variant="caption" mono style={tw`p-3`}>
-                  No variables
-                </AppText>
-              )}
-              {entries.map(({ key, value }, index) => (
-                <View
-                  key={key}
-                  style={tw.style('gap-0.5 px-3 py-2.5', index < entries.length - 1 && 'border-b border-line')}
-                >
-                  <AppText variant="caption" mono tone="muted" style={tw`text-[11px] tracking-wide`}>
-                    {key}
-                  </AppText>
-                  {value === '' ? (
-                    <AppText variant="caption" tone="dim" style={tw`text-[13px] italic`}>
-                      empty
-                    </AppText>
-                  ) : (
-                    <AppText mono tone="fg" style={tw`text-[13px] leading-[19px]`}>
-                      {value}
-                    </AppText>
-                  )}
-                </View>
-              ))}
+              <VariableList entries={entries} />
             </ScrollView>
           </View>
           <View style={tw`flex-row gap-3`}>

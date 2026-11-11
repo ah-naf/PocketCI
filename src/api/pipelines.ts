@@ -3,6 +3,7 @@ import { buildQuery, getJson, getPage } from './gitlabClient';
 export type PipelineSummary = {
   id: number;
   ref: string;
+  source: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -19,6 +20,8 @@ export type Pipeline = {
   started_at: string | null;
   finished_at: string | null;
   duration: number | null;
+  source: string | null;
+  user?: { name: string; username: string } | null;
 };
 
 export type Job = {
@@ -28,6 +31,8 @@ export type Job = {
   status: string;
   duration: number | null;
   started_at: string | null;
+  finished_at: string | null;
+  runner?: { description?: string | null } | null;
   web_url: string;
 };
 
@@ -40,6 +45,10 @@ export function fetchPipelines(projectId: number, branch: string | undefined, st
 
 export function fetchPipeline(projectId: number, pipelineId: number) {
   return getJson<Pipeline>(`/projects/${projectId}/pipelines/${pipelineId}`);
+}
+
+export function fetchPipelineVariables(projectId: number, pipelineId: number) {
+  return getJson<{ key: string; value: string }[]>(`/projects/${projectId}/pipelines/${pipelineId}/variables`);
 }
 
 export function fetchJobs(projectId: number, pipelineId: number) {

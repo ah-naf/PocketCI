@@ -185,7 +185,7 @@ export function BranchScreen({ navigation, route }: Props) {
         <PipelineRow
           key={item.id}
           id={item.id}
-          title={item.title}
+          title={[item.source, item.title].filter(Boolean).join(' · ')}
           status={item.status}
           ago={formatRelativeTime(item.createdAt)}
           duration={formatPipelineDuration(item.createdAt, item.updatedAt, item.status)}

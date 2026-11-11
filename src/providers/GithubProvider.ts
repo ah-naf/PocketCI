@@ -52,6 +52,9 @@ const toRun = (run: GithubRun): Run => ({
   startedAt: run.run_started_at ?? null,
   finishedAt: run.status === 'completed' ? run.updated_at : null,
   durationSeconds: null,
+  triggeredBy: run.actor?.login ?? null,
+  source: run.event,
+  commitTitle: run.head_commit?.message.split('\n')[0] ?? null,
 });
 
 const toJob = (job: GithubJob): Job => ({
@@ -64,6 +67,8 @@ const toJob = (job: GithubJob): Job => ({
       ? (Date.parse(job.completed_at) - Date.parse(job.started_at)) / 1000
       : null,
   startedAt: job.started_at,
+  finishedAt: job.completed_at,
+  runnerName: job.runner_name,
   webUrl: job.html_url,
 });
 
@@ -103,7 +108,7 @@ export class GithubProvider extends CiProvider {
     runs: 'workflow runs',
     target: 'workflow',
   };
-  readonly capabilities = { cancelJob: false, liveLogs: false, forceCancelRun: true, playJob: false };
+  readonly capabilities = { cancelJob: false, liveLogs: false, forceCancelRun: true, playJob: false, runVariables: false };
   readonly setup = {
     editableBaseUrl: false,
     defaultBaseUrl: 'https://api.github.com',
@@ -179,6 +184,7 @@ export class GithubProvider extends CiProvider {
         id: String(run.id),
         title: run.name ?? '',
         ref: run.head_branch ?? '',
+        source: run.event,
         status: mapGithubStatus(run.status, run.conclusion),
         createdAt: run.created_at,
         updatedAt: run.updated_at,
@@ -192,6 +198,10 @@ export class GithubProvider extends CiProvider {
 
   async listJobs(project: ProjectRef, runId: string) {
     return (await fetchRunJobs(project.key, runId)).map(toJob);
+  }
+
+  async getRunVariables(): Promise<{ key: string; value: string }[]> {
+    return [];
   }
 
   async getJob(project: ProjectRef, jobId: string) {
