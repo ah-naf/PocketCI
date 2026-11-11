@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Gitlab Pipeline",
+    "slug": "gitlab-pipeline",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": false },
+    "android": {
+      "package": "app.gitlabpipeline",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0E11",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    }
+  }
+}
