@@ -3,9 +3,9 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { StatusBadge } from './StatusBadge';
 
-type Props = { id: string; title?: string; status: string; ago: string; duration: string; onPress?: () => void };
+type Props = { id: string; title?: string; branch?: string; status: string; ago: string; duration: string; onPress?: () => void };
 
-export function PipelineRow({ id, title, status, ago, duration, onPress }: Props) {
+export function PipelineRow({ id, title, branch, status, ago, duration, onPress }: Props) {
   const { tw, colors } = useTheme();
   return (
     <Pressable
@@ -21,6 +21,11 @@ export function PipelineRow({ id, title, status, ago, duration, onPress }: Props
         <AppText mono style={tw`text-[15px] font-mono-medium`}>
           #{id}
         </AppText>
+        {branch ? (
+          <AppText variant="caption" mono tone="muted" numberOfLines={1} style={tw`text-[11px]`}>
+            {branch}
+          </AppText>
+        ) : null}
         {title ? (
           <AppText variant="caption" numberOfLines={1}>
             {title}

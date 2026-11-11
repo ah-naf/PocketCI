@@ -1,11 +1,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { ListRow } from '../components/ListRow';
 import { Screen } from '../components/Screen';
+import { SegmentedControl } from '../components/SegmentedControl';
 import { SearchList } from '../components/SearchList';
 import { useSearchPage } from '../hooks/useSearchPage';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
+import { useTheme } from '../theme';
+import { LatestRuns } from './LatestRuns';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Branches'>;
 
@@ -14,6 +18,8 @@ type BranchRow = { name: string; isDefault: boolean };
 export function BranchesScreen({ navigation, route }: Props) {
   const { project } = route.params;
   const provider = useProvider();
+  const { tw } = useTheme();
+  const [view, setView] = useState<'branches' | 'runs'>('branches');
   const [defaultBranch, setDefaultBranch] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,7 +39,20 @@ export function BranchesScreen({ navigation, route }: Props) {
   ];
 
   return (
-    <Screen title="Branches" subtitle={project.name} onBack={navigation.goBack}>
+    <Screen title={project.name} subtitle={project.path} onBack={navigation.goBack}>
+      <View style={tw`px-4 pb-1 pt-3`}>
+        <SegmentedControl
+          options={[
+            { id: 'branches', label: 'Branches' },
+            { id: 'runs', label: `Latest ${provider.labels.runs}` },
+          ]}
+          value={view}
+          onChange={setView}
+        />
+      </View>
+      {view === 'runs' ? (
+        <LatestRuns project={project} onOpenRun={(runId) => navigation.navigate('Pipeline', { project, runId })} />
+      ) : (
       <SearchList
         data={rows}
         keyExtractor={(row) => row.name}
@@ -57,6 +76,7 @@ export function BranchesScreen({ navigation, route }: Props) {
         emptyTitle="No branches found"
         emptyHint="Try a different search."
       />
+      )}
     </Screen>
   );
 }
