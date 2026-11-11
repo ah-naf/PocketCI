@@ -9,6 +9,18 @@ export type Project = {
 
 export type Branch = { name: string };
 
+export function fetchProjects(search: string, page: number) {
+  const query = buildQuery({
+    membership: 'true',
+    simple: 'true',
+    order_by: 'last_activity_at',
+    per_page: 50,
+    search,
+    page,
+  });
+  return getPage<Project>(`/projects${query}`);
+}
+
 export function fetchProject(id: number | string) {
   return getJson<Project>(`/projects/${id}`);
 }

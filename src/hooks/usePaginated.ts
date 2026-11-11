@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Page } from '../api/gitlabClient';
 
-type Busy = 'initial' | 'refresh' | 'more' | 'idle';
+export type Busy = 'initial' | 'refresh' | 'more' | 'idle';
 
 type State<T> = { items: T[]; nextPage: number | null; busy: Busy; error: unknown };
 
