@@ -3,7 +3,7 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { StatusBadge } from './StatusBadge';
 
-type Props = { id: number; status: string; ago: string; duration: string; onPress?: () => void };
+type Props = { id: string; status: string; ago: string; duration: string; onPress?: () => void };
 
 export function PipelineRow({ id, status, ago, duration, onPress }: Props) {
   const { tw, colors } = useTheme();

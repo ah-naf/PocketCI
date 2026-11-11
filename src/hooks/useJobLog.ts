@@ -1,20 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchTrace } from '../api/trace';
+import { useProvider } from '../providers/ProviderContext';
+import type { ProjectRef } from '../providers/types';
 
-export function useJobLog(projectId: number, jobId: number) {
+export function useJobLog(project: ProjectRef, jobId: string) {
+  const provider = useProvider();
   const [text, setText] = useState('');
   const [status, setStatus] = useState<{ loading: boolean; error?: unknown }>({ loading: true });
-  const offset = useRef(0);
+  const cursor = useRef<string | null>(null);
   const inFlight = useRef(false);
 
   const fetchNext = useCallback(
     async (fromStart = false) => {
       if (inFlight.current) return;
       inFlight.current = true;
-      if (fromStart) offset.current = 0;
+      if (fromStart) cursor.current = null;
       try {
-        const chunk = await fetchTrace(projectId, jobId, offset.current);
-        offset.current = chunk.nextOffset;
+        const chunk = await provider.readLog(project, jobId, cursor.current);
+        cursor.current = chunk.cursor;
         setText((current) => (chunk.replace ? chunk.text : current + chunk.text));
         setStatus({ loading: false });
       } catch (error) {
@@ -23,7 +25,7 @@ export function useJobLog(projectId: number, jobId: number) {
         inFlight.current = false;
       }
     },
-    [projectId, jobId],
+    [provider, project, jobId],
   );
 
   useEffect(() => {

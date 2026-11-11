@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { describeError, type FriendlyError } from '../api/errors';
-import { fetchCurrentUser } from '../api/user';
+import { useProvider } from '../providers/ProviderContext';
 import { DEFAULT_BASE_URL, loadSettings, saveSettings } from '../storage/secure';
 
 export type ConnectionStatus =
@@ -11,6 +11,7 @@ export type ConnectionStatus =
   | { kind: 'error'; error: FriendlyError };
 
 export function useConnection() {
+  const provider = useProvider();
   const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
   const [token, setToken] = useState('');
   const [status, setStatus] = useState<ConnectionStatus>({ kind: 'idle' });
@@ -27,8 +28,8 @@ export function useConnection() {
   async function test() {
     setStatus({ kind: 'testing' });
     try {
-      const user = await fetchCurrentUser(cleaned);
-      setStatus({ kind: 'ok', username: user.username });
+      const username = await provider.verifyCredentials(cleaned);
+      setStatus({ kind: 'ok', username });
       return true;
     } catch (error) {
       setStatus({ kind: 'error', error: describeError(error) });

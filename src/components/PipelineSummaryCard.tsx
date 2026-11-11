@@ -1,18 +1,20 @@
 import { View } from 'react-native';
-import type { Pipeline } from '../api/pipelines';
+import type { Run } from '../providers/types';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
 import { StatusBadge } from './StatusBadge';
 
 type Props = {
-  pipeline: Pipeline;
+  pipeline: Run;
   elapsed: string;
-  onOpenInGitlab: () => void;
+  openLabel: string;
+  cancelLabel: string;
+  onOpenExternal: () => void;
   onCancel?: () => void;
 };
 
-export function PipelineSummaryCard({ pipeline, elapsed, onOpenInGitlab, onCancel }: Props) {
+export function PipelineSummaryCard({ pipeline, elapsed, openLabel, cancelLabel, onOpenExternal, onCancel }: Props) {
   const { tw } = useTheme();
   return (
     <View style={tw`mx-4 gap-4 rounded-2xl border border-line bg-card p-4`}>
@@ -36,8 +38,8 @@ export function PipelineSummaryCard({ pipeline, elapsed, onOpenInGitlab, onCance
           </AppText>
         </View>
       </View>
-      <Button variant="ghost" label="Open in GitLab" onPress={onOpenInGitlab} />
-      {onCancel && <Button variant="danger" label="Cancel pipeline" onPress={onCancel} />}
+      <Button variant="ghost" label={openLabel} onPress={onOpenExternal} />
+      {onCancel && <Button variant="danger" label={cancelLabel} onPress={onCancel} />}
     </View>
   );
 }

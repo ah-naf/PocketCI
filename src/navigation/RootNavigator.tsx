@@ -7,16 +7,17 @@ import { PipelineScreen } from '../screens/PipelineScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { SetupScreen } from '../screens/SetupScreen';
+import type { ProjectRef, RunStatus } from '../providers/types';
 import { useTheme } from '../theme';
 
 export type RootStackParamList = {
   Setup: undefined;
   Projects: undefined;
   Settings: undefined;
-  Branches: { projectId: number; projectName: string };
-  Branch: { projectId: number; projectName: string; branch: string };
-  Pipeline: { projectId: number; projectName: string; pipelineId: number };
-  JobLog: { projectId: number; jobId: number; jobName: string; status: string };
+  Branches: { project: ProjectRef };
+  Branch: { project: ProjectRef; branch: string };
+  Pipeline: { project: ProjectRef; runId: string };
+  JobLog: { project: ProjectRef; jobId: string; jobName: string; status: RunStatus };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

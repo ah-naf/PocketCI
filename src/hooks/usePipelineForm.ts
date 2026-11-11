@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { CiVariable } from '../api/ciVariables';
+import type { RunInput } from '../providers/types';
 
 const KEY_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const KEY_ERROR = "Keys use letters, digits and underscores only, and can't start with a digit.";
@@ -7,7 +7,7 @@ const KEY_ERROR = "Keys use letters, digits and underscores only, and can't star
 export type CustomVariable = { id: number; key: string; value: string };
 export type VariableEntry = { key: string; value: string };
 
-export function usePipelineForm(variables: CiVariable[] | undefined) {
+export function usePipelineForm(variables: RunInput[] | undefined) {
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [customRows, setCustomRows] = useState<CustomVariable[]>([]);
   const nextId = useRef(1);
@@ -28,7 +28,7 @@ export function usePipelineForm(variables: CiVariable[] | undefined) {
   }
 
   const entries: VariableEntry[] = [
-    ...(variables ?? []).map(({ key, value }) => ({ key, value: edits[key] ?? value })),
+    ...(variables ?? []).map(({ key, defaultValue }) => ({ key, value: edits[key] ?? defaultValue })),
     ...filledRows.map((row) => ({ key: row.key.trim(), value: row.value })),
   ];
 

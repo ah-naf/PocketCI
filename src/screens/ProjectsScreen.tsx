@@ -1,41 +1,48 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useCallback } from 'react';
 import { View } from 'react-native';
-import { fetchProjects } from '../api/projects';
 import { AppText } from '../components/AppText';
 import { IconButton } from '../components/IconButton';
 import { ListRow } from '../components/ListRow';
 import { Screen } from '../components/Screen';
 import { SectionHeader } from '../components/SectionHeader';
 import { SearchList } from '../components/SearchList';
-
 import { useGitlabHost } from '../hooks/useGitlabHost';
 import { useRecentProjects } from '../hooks/useRecentProjects';
 import { useSearchPage } from '../hooks/useSearchPage';
 import { useThemeToggle } from '../hooks/useThemeToggle';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { rememberProject, type RecentProject } from '../storage/recentProjects';
+import { useProvider } from '../providers/ProviderContext';
+import type { ProjectRef } from '../providers/types';
+import { rememberProject } from '../storage/recentProjects';
 import { useTheme } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Projects'>;
 
 export function ProjectsScreen({ navigation }: Props) {
   const { tw } = useTheme();
+  const provider = useProvider();
+  const plural = provider.labels.projects.toLowerCase();
   const host = useGitlabHost();
   const recent = useRecentProjects();
   const themeToggle = useThemeToggle();
-  const { search, setSearch, items, busy, error, refresh, loadMore } = useSearchPage(fetchProjects);
+  const fetchWithQuery = useCallback(
+    (query: string, page: number) => provider.listProjects(query, page),
+    [provider],
+  );
+  const { search, setSearch, items, busy, error, refresh, loadMore } = useSearchPage(fetchWithQuery);
 
-  function openProject(project: RecentProject) {
+  function openProject(project: ProjectRef) {
     rememberProject(project);
-    navigation.navigate('Branches', { projectId: project.id, projectName: project.name });
+    navigation.navigate('Branches', { project });
   }
 
-  const renderProject = (project: RecentProject) => (
+  const renderProject = (project: ProjectRef) => (
     <ListRow
-      key={project.id}
+      key={project.key}
       title={project.name}
       subtitle={project.path}
-      tag={String(project.id)}
+      tag={project.key}
       onPress={() => openProject(project)}
     />
   );
@@ -56,33 +63,31 @@ export function ProjectsScreen({ navigation }: Props) {
         <IconButton icon="sliders" label="Settings" onPress={() => navigation.navigate('Settings')} />
       </View>
       <View style={tw`border-b border-line px-4 pb-3.5 pt-6`}>
-        <AppText variant="display">Projects</AppText>
+        <AppText variant="display">{provider.labels.projects}</AppText>
       </View>
       <SearchList
         data={items}
-        keyExtractor={(project) => String(project.id)}
-        renderItem={({ id, name, path_with_namespace }) =>
-          renderProject({ id, name, path: path_with_namespace })
-        }
+        keyExtractor={(project) => project.key}
+        renderItem={renderProject}
         header={
           showRecent ? (
             <View>
               <SectionHeader title="Recent" />
               {recent.map(renderProject)}
-              <SectionHeader title="All projects" />
+              <SectionHeader title={`All ${plural}`} />
             </View>
           ) : undefined
         }
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search projects"
+        searchPlaceholder={`Search ${plural}`}
         busy={busy}
         error={error}
         onRefresh={refresh}
         onEndReached={loadMore}
-        loadingLabel="Loading projects"
-        emptyTitle="No projects found"
-        emptyHint="Try a different search. The list shows projects the token's user is a member of."
+        loadingLabel={`Loading ${plural}`}
+        emptyTitle={`No ${plural} found`}
+        emptyHint={`Try a different search. The list shows ${plural} the token's user is a member of.`}
       />
     </Screen>
   );

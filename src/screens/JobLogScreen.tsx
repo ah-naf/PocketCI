@@ -3,7 +3,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { cancelJob, fetchJob } from '../api/pipelines';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { NoticeBar } from '../components/NoticeBar';
@@ -20,10 +19,11 @@ import { useJobLog } from '../hooks/useJobLog';
 import { useNow } from '../hooks/useNow';
 import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
 import { confirmCancel } from '../utils/confirmCancel';
 import { formatJobDuration } from '../utils/format';
-import { MAX_LOG_LINES, parseLog, toLogLines } from '../utils/log';
+import { MAX_LOG_LINES, toLogLines } from '../utils/log';
 import { isJobActive } from '../utils/status';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'JobLog'>;
@@ -31,15 +31,16 @@ type Props = NativeStackScreenProps<RootStackParamList, 'JobLog'>;
 const POLL_INTERVAL_MS = 3000;
 
 export function JobLogScreen({ navigation, route }: Props) {
-  const { projectId, jobId, jobName, status: initialStatus } = route.params;
+  const { project, jobId, jobName, status: initialStatus } = route.params;
   const { tw } = useTheme();
+  const provider = useProvider();
   const focused = useIsFocused();
   const [showFull, setShowFull] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const loadJob = useCallback(() => fetchJob(projectId, jobId), [projectId, jobId]);
+  const loadJob = useCallback(() => provider.getJob(project, jobId), [provider, project, jobId]);
   const job = useAsync(loadJob);
-  const log = useJobLog(projectId, jobId);
+  const log = useJobLog(project, jobId);
   const scroll = useAutoScroll();
 
   const status = job.data?.status ?? initialStatus;
@@ -58,12 +59,12 @@ export function JobLogScreen({ navigation, route }: Props) {
     if (!live) log.poll();
   }, [live, log.poll]);
 
-  const allLines = useMemo(() => parseLog(log.text), [log.text]);
+  const allLines = useMemo(() => provider.cleanLog(log.text), [provider, log.text]);
   const skipped = showFull ? 0 : Math.max(0, allLines.length - MAX_LOG_LINES);
   const lines = useMemo(() => toLogLines(allLines, skipped), [allLines, skipped]);
 
   const cancelRunningJob = () =>
-    confirmCancel('job', () => cancelJob(projectId, jobId), () => {
+    confirmCancel('job', provider.displayName, () => provider.cancelJob(project, jobId), () => {
       job.poll();
       log.poll();
     });
@@ -95,7 +96,7 @@ export function JobLogScreen({ navigation, route }: Props) {
         </>
       }
     >
-      {live && status !== 'canceling' && <NoticeBar text="This job is running." actionLabel="Cancel job" danger onAction={cancelRunningJob} />}
+      {live && status !== 'canceling' && provider.capabilities.cancelJob && <NoticeBar text="This job is running." actionLabel="Cancel job" danger onAction={cancelRunningJob} />}
       {skipped > 0 && (
         <NoticeBar
           text={`Showing the last ${MAX_LOG_LINES} of ${allLines.length} lines`}

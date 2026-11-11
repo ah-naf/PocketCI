@@ -1,9 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
-import { fetchCiVariables } from '../api/ciVariables';
 import { describeError } from '../api/errors';
-import { createPipeline, fetchPipelines } from '../api/pipelines';
 import { AppRefreshControl } from '../components/AppRefreshControl';
 import { AppText } from '../components/AppText';
 import { Banner } from '../components/Banner';
@@ -19,34 +17,38 @@ import { VariableFields } from '../components/VariableFields';
 import { useAsync } from '../hooks/useAsync';
 import { usePipelineForm } from '../hooks/usePipelineForm';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
 import { formatPipelineDuration, formatRelativeTime } from '../utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Branch'>;
 
 export function BranchScreen({ navigation, route }: Props) {
-  const { projectId, projectName, branch } = route.params;
+  const { project, branch } = route.params;
   const { tw } = useTheme();
+  const provider = useProvider();
+  const { run, runs: runsLabel } = provider.labels;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [runError, setRunError] = useState<unknown>();
 
-  const loadVariables = useCallback(() => fetchCiVariables(projectId, branch), [projectId, branch]);
-  const loadPipelines = useCallback(() => fetchPipelines(projectId, branch), [projectId, branch]);
-  const ci = useAsync(loadVariables);
-  const pipelines = useAsync(loadPipelines);
-  const form = usePipelineForm(ci.data?.variables);
+  const loadOptions = useCallback(() => provider.getRunOptions(project, branch), [provider, project, branch]);
+  const loadRuns = useCallback(() => provider.listRuns(project, branch), [provider, project, branch]);
+  const options = useAsync(loadOptions);
+  const runs = useAsync(loadRuns);
+  const target = options.data?.targets[0];
+  const form = usePipelineForm(target?.inputs);
 
-  const openPipeline = (pipelineId: number) =>
-    navigation.navigate('Pipeline', { projectId, projectName, pipelineId });
+  const openRun = (runId: string) => navigation.navigate('Pipeline', { project, runId });
 
-  async function runPipeline() {
+  async function startRun() {
+    if (!target) return;
     setSubmitting(true);
     setRunError(undefined);
     try {
-      const created = await createPipeline(projectId, branch, form.entries);
-      pipelines.poll();
-      openPipeline(created.id);
+      const started = await provider.startRun(project, branch, { targetId: target.id, inputs: form.entries });
+      runs.poll();
+      if (started.runId) openRun(started.runId);
     } catch (error) {
       setRunError(error);
     } finally {
@@ -55,92 +57,90 @@ export function BranchScreen({ navigation, route }: Props) {
     }
   }
 
-  const variableCount = ci.data?.variables.length ?? 0;
+  const inputCount = target?.inputs.length ?? 0;
   const runFailure = runError ? describeError(runError) : undefined;
 
   return (
     <Screen
       title={branch}
-      subtitle={projectName}
+      subtitle={project.name}
       monoTitle
       onBack={navigation.goBack}
       scroll
       refreshControl={
         <AppRefreshControl
-          refreshing={ci.refreshing || pipelines.refreshing}
+          refreshing={options.refreshing || runs.refreshing}
           onRefresh={() => {
-            ci.reload();
-            pipelines.reload();
+            options.reload();
+            runs.reload();
           }}
         />
       }
     >
       <SectionHeader
-        title="Run pipeline"
-        right={variableCount > 0 ? `${variableCount} variable${variableCount > 1 ? 's' : ''}` : undefined}
+        title={`Run ${run}`}
+        right={inputCount > 0 ? `${inputCount} variable${inputCount > 1 ? 's' : ''}` : undefined}
       />
       <View style={tw`gap-4 px-4`}>
-        {ci.loading && <LoadingRow label="Loading variables" />}
-        {ci.error !== undefined && <ErrorView error={ci.error} onRetry={ci.reload} />}
-        {ci.data && ci.data.lintErrors.length > 0 && (
+        {options.loading && <LoadingRow label="Loading variables" />}
+        {options.error !== undefined && <ErrorView error={options.error} onRetry={options.reload} />}
+        {options.data?.notices.map((notice) => (
           <Banner
-            variant="failed"
-            title="CI config didn't pass lint"
-            message="Fix .gitlab-ci.yml on this branch, then pull to refresh."
-            detail={ci.data.lintErrors.join('\n')}
+            key={notice.title}
+            variant={notice.kind === 'error' ? 'failed' : 'manual'}
+            title={notice.title}
+            message={notice.message}
+            detail={notice.detail}
+          />
+        ))}
+        <VariableFields variables={target?.inputs ?? []} edits={form.edits} onChange={form.setValue} />
+        {options.data?.allowCustomInputs && (
+          <CustomVariableRows
+            rows={form.customRows}
+            errors={form.customErrors}
+            onAdd={form.addCustom}
+            onChange={form.updateCustom}
+            onRemove={form.removeCustom}
           />
         )}
-        {ci.data?.usedFallback && (
-          <Banner
-            variant="manual"
-            title="include: files not resolved"
-            message="The config pulls in files this app couldn't read, so declared variables aren't listed. You can still run the pipeline and add variables by hand."
-          />
-        )}
-        <VariableFields variables={ci.data?.variables ?? []} edits={form.edits} onChange={form.setValue} />
-        <CustomVariableRows
-          rows={form.customRows}
-          errors={form.customErrors}
-          onAdd={form.addCustom}
-          onChange={form.updateCustom}
-          onRemove={form.removeCustom}
-        />
         {runFailure && <Banner variant="failed" {...runFailure} />}
         <Button
           variant="primary"
-          label="Run pipeline"
+          label={`Run ${run}`}
           onPress={() => setConfirmOpen(true)}
-          disabled={!form.canRun || ci.loading}
+          disabled={!form.canRun || options.loading || !target?.runnable}
           style={tw`mt-2`}
         />
       </View>
 
-      <SectionHeader title="Recent pipelines" bordered />
-      {pipelines.loading && <LoadingRow label="Loading pipelines" />}
-      {pipelines.error !== undefined && <ErrorView error={pipelines.error} onRetry={pipelines.reload} />}
-      {pipelines.data?.length === 0 && (
+      <SectionHeader title={`Recent ${runsLabel}`} bordered />
+      {runs.loading && <LoadingRow label={`Loading ${runsLabel}`} />}
+      {runs.error !== undefined && <ErrorView error={runs.error} onRetry={runs.reload} />}
+      {runs.data?.length === 0 && (
         <AppText variant="small" style={tw`p-4`}>
-          No pipelines on this branch yet.
+          No {runsLabel} on this branch yet.
         </AppText>
       )}
-      {pipelines.data?.map((pipeline) => (
+      {runs.data?.map((item) => (
         <PipelineRow
-          key={pipeline.id}
-          id={pipeline.id}
-          status={pipeline.status}
-          ago={formatRelativeTime(pipeline.created_at)}
-          duration={formatPipelineDuration(pipeline.created_at, pipeline.updated_at, pipeline.status)}
-          onPress={() => openPipeline(pipeline.id)}
+          key={item.id}
+          id={item.id}
+          status={item.status}
+          ago={formatRelativeTime(item.createdAt)}
+          duration={formatPipelineDuration(item.createdAt, item.updatedAt, item.status)}
+          onPress={() => openRun(item.id)}
         />
       ))}
 
       <RunConfirmDialog
         visible={confirmOpen}
         branch={branch}
-        projectName={projectName}
+        projectName={project.name}
         entries={form.entries}
+        runLabel={run}
+        serviceName={provider.displayName}
         submitting={submitting}
-        onConfirm={runPipeline}
+        onConfirm={startRun}
         onCancel={() => setConfirmOpen(false)}
       />
     </Screen>

@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { Appearance } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { ProviderRoot } from './src/providers/ProviderContext';
 import { loadSettings } from './src/storage/secure';
 import { loadThemePreference } from './src/storage/themePreference';
 
@@ -36,8 +37,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <RootNavigator initialRouteName={hasToken ? 'Projects' : 'Setup'} />
-      <StatusBar style="auto" />
+      <ProviderRoot>
+        <RootNavigator initialRouteName={hasToken ? 'Projects' : 'Setup'} />
+        <StatusBar style="auto" />
+      </ProviderRoot>
     </SafeAreaProvider>
   );
 }

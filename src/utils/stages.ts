@@ -1,4 +1,4 @@
-import type { Job } from '../api/pipelines';
+import type { Job } from '../providers/types';
 
 export type Stage = { name: string; jobs: Job[] };
 
@@ -6,8 +6,8 @@ const FINISHED_JOB_STATUSES = ['success', 'failed', 'canceled', 'skipped'];
 
 export function groupJobsByStage(jobs: Job[]): Stage[] {
   const stages = new Map<string, Job[]>();
-  for (const job of [...jobs].sort((a, b) => a.id - b.id)) {
-    stages.set(job.stage, [...(stages.get(job.stage) ?? []), job]);
+  for (const job of [...jobs].sort((a, b) => Number(a.id) - Number(b.id))) {
+    stages.set(job.group, [...(stages.get(job.group) ?? []), job]);
   }
   return [...stages].map(([name, stageJobs]) => ({ name, jobs: stageJobs }));
 }

@@ -1,5 +1,5 @@
 import { Pressable } from 'react-native';
-import type { Job } from '../api/pipelines';
+import type { Job } from '../providers/types';
 import { useTheme } from '../theme';
 import { formatJobDuration } from '../utils/format';
 import { AppText } from './AppText';

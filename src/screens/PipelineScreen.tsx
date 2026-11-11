@@ -2,7 +2,6 @@ import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useMemo } from 'react';
 import { Linking, View } from 'react-native';
-import { cancelPipeline, fetchJobs, fetchPipeline } from '../api/pipelines';
 import { AppRefreshControl } from '../components/AppRefreshControl';
 import { AppText } from '../components/AppText';
 import { ErrorView } from '../components/ErrorView';
@@ -15,6 +14,7 @@ import { useAsync } from '../hooks/useAsync';
 import { useNow } from '../hooks/useNow';
 import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
 import { confirmCancel } from '../utils/confirmCancel';
 import { formatPipelineElapsed } from '../utils/format';
@@ -26,61 +26,64 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Pipeline'>;
 const POLL_INTERVAL_MS = 4000;
 
 export function PipelineScreen({ navigation, route }: Props) {
-  const { projectId, projectName, pipelineId } = route.params;
+  const { project, runId } = route.params;
   const { tw } = useTheme();
+  const provider = useProvider();
   const focused = useIsFocused();
 
-  const loadPipeline = useCallback(() => fetchPipeline(projectId, pipelineId), [projectId, pipelineId]);
-  const loadJobs = useCallback(() => fetchJobs(projectId, pipelineId), [projectId, pipelineId]);
-  const pipeline = useAsync(loadPipeline);
+  const loadRun = useCallback(() => provider.getRun(project, runId), [provider, project, runId]);
+  const loadJobs = useCallback(() => provider.listJobs(project, runId), [provider, project, runId]);
+  const run = useAsync(loadRun);
   const jobs = useAsync(loadJobs);
 
-  const active = pipeline.data ? isPipelineActive(pipeline.data.status) : true;
+  const active = run.data ? isPipelineActive(run.data.status) : true;
   const now = useNow(active);
   usePoll(
     () => {
-      pipeline.poll();
+      run.poll();
       jobs.poll();
     },
     POLL_INTERVAL_MS,
     active && focused,
   );
 
-  const cancelRunningPipeline = () =>
-    confirmCancel('pipeline', () => cancelPipeline(projectId, pipelineId), () => {
-      pipeline.poll();
+  const cancelRunningRun = () =>
+    confirmCancel(provider.labels.run, provider.displayName, () => provider.cancelRun(project, runId), () => {
+      run.poll();
       jobs.poll();
     });
 
   const stages = useMemo(() => groupJobsByStage(jobs.data ?? []), [jobs.data]);
-  const error = pipeline.error ?? jobs.error;
+  const error = run.error ?? jobs.error;
 
   return (
     <Screen
-      title={`#${pipelineId}`}
-      subtitle={projectName}
+      title={`#${runId}`}
+      subtitle={project.name}
       monoTitle
-      headerRight={active && pipeline.data ? <LiveBadge /> : undefined}
+      headerRight={active && run.data ? <LiveBadge /> : undefined}
       onBack={navigation.goBack}
       scroll
       refreshControl={
         <AppRefreshControl
-          refreshing={pipeline.refreshing || jobs.refreshing}
+          refreshing={run.refreshing || jobs.refreshing}
           onRefresh={() => {
-            pipeline.reload();
+            run.reload();
             jobs.reload();
           }}
         />
       }
     >
-      {pipeline.loading && <LoadingRow label="Loading pipeline" />}
-      {error !== undefined && <ErrorView error={error} onRetry={pipeline.reload} />}
-      {pipeline.data && (
+      {run.loading && <LoadingRow label={`Loading ${provider.labels.run}`} />}
+      {error !== undefined && <ErrorView error={error} onRetry={run.reload} />}
+      {run.data && (
         <PipelineSummaryCard
-          pipeline={pipeline.data}
-          elapsed={formatPipelineElapsed(pipeline.data, now)}
-          onOpenInGitlab={() => Linking.openURL(pipeline.data?.web_url ?? '')}
-          onCancel={active && pipeline.data.status !== 'canceling' ? cancelRunningPipeline : undefined}
+          pipeline={run.data}
+          elapsed={formatPipelineElapsed(run.data, now)}
+          openLabel={`Open in ${provider.displayName}`}
+          cancelLabel={`Cancel ${provider.labels.run}`}
+          onOpenExternal={() => Linking.openURL(run.data?.webUrl ?? '')}
+          onCancel={active && run.data.status !== 'canceling' ? cancelRunningRun : undefined}
         />
       )}
       <View style={tw`pb-8 pt-4`}>
@@ -91,7 +94,7 @@ export function PipelineScreen({ navigation, route }: Props) {
             now={now}
             onJobPress={(job) =>
               navigation.navigate('JobLog', {
-                projectId,
+                project,
                 jobId: job.id,
                 jobName: job.name,
                 status: job.status,

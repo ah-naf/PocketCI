@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import type { Job } from '../api/pipelines';
+import type { Job } from '../providers/types';
 import { useTheme } from '../theme';
 import { getStatusStyle } from '../theme/status';
 import { countFinishedJobs, getStageStatus, type Stage } from '../utils/stages';
