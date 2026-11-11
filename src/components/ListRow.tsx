@@ -43,11 +43,11 @@ export function ListRow({ title, subtitle, tag, accentTag, monoTitle, onPress, o
       {tag && (
         <View
           style={tw.style(
-            'h-[22px] justify-center rounded-md border px-1.5',
+            'h-[22px] max-w-[38%] shrink-0 justify-center rounded-md border px-1.5',
             accentTag ? 'border-accent/45' : 'border-line',
           )}
         >
-          <AppText variant="caption" mono tone={accentTag ? 'accent' : 'muted'} style={tw`text-[11px]`}>
+          <AppText variant="caption" mono numberOfLines={1} tone={accentTag ? 'accent' : 'muted'} style={tw`text-[11px]`}>
             {tag}
           </AppText>
         </View>
