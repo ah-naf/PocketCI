@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { useTheme } from '../theme';
 import { getStatusStyle } from '../theme/status';
 import { AppText } from './AppText';
+import { PulseDot } from './PulseDot';
 
 type Props = { status: string; large?: boolean };
 
@@ -16,7 +17,7 @@ export function StatusBadge({ status, large }: Props) {
         large ? 'h-8 gap-2 pl-2.5 pr-3' : 'h-6 gap-1.5 pl-2 pr-2.5',
       )}
     >
-      <View style={tw`h-2 w-2 rounded-full bg-${color}`} />
+      <PulseDot color={color} pulsing={status === 'running'} />
       <AppText
         variant={large ? 'small' : 'caption'}
         tone={textColor ?? color}

@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import { describeError } from '../api/errors';
+import { errorHaptic, successHaptic, tapHaptic } from './haptics';
 
 type ConfirmOptions = {
   title: string;
@@ -20,10 +21,13 @@ export function confirmAction(
       text: confirmLabel,
       style: destructive ? 'destructive' : 'default',
       onPress: async () => {
+        tapHaptic();
         try {
           await action();
+          successHaptic();
           onDone();
         } catch (error) {
+          errorHaptic();
           const { title: errorTitle, message: errorMessage } = describeError(error);
           Alert.alert(errorTitle, errorMessage);
         }

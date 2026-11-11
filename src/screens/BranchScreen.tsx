@@ -26,6 +26,7 @@ import { useProvider } from '../providers/ProviderContext';
 import type { RunFilter } from '../providers/types';
 import { useTheme } from '../theme';
 import { formatPipelineDuration, formatRelativeTime } from '../utils/format';
+import { errorHaptic, successHaptic, tapHaptic } from '../utils/haptics';
 import { isPipelineActive, RUN_FILTERS } from '../utils/status';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Branch'>;
@@ -78,16 +79,19 @@ export function BranchScreen({ navigation, route }: Props) {
 
   async function startRun() {
     if (!target) return;
+    tapHaptic();
     setSubmitting(true);
     setRunError(undefined);
     setStartedNotice(false);
     setRunFilter('all');
     try {
       const started = await provider.startRun(project, branch, { targetId: target.id, inputs: form.entries });
+      successHaptic();
       runs.poll();
       if (started.runId) openRun(started.runId);
       else setStartedNotice(true);
     } catch (error) {
+      errorHaptic();
       setRunError(error);
     } finally {
       setSubmitting(false);
