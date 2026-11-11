@@ -1,6 +1,6 @@
-# Gitlab Pipeline
+# PocketCI
 
-Personal mobile app (Expo, React Native, TypeScript) for a self-hosted GitLab. It calls the GitLab REST API directly. There is no backend and the app is never published.
+Personal mobile app (Expo, React Native, TypeScript) to run and watch pipelines on GitLab and GitHub. It calls their REST APIs directly. There is no backend and the app is never published.
 
 ## Status
 

@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Gitlab Pipeline",
-    "slug": "gitlab-pipeline",
+    "name": "PocketCI",
+    "slug": "pocketci",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": { "supportsTablet": false },
     "android": {
-      "package": "app.gitlabpipeline",
+      "package": "app.pocketci",
       "adaptiveIcon": {
         "backgroundColor": "#0B0E11",
         "foregroundImage": "./assets/android-icon-foreground.png",

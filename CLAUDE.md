@@ -1,6 +1,6 @@
-# GitLab Pipeline Manager
+# PocketCI
 
-Personal React Native (Expo, TypeScript) app for a self-hosted GitLab. No backend. Brief: [IDEA.md](IDEA.md). Tickets: [tickets/](tickets/).
+Personal React Native (Expo, TypeScript) app for GitLab and GitHub pipelines. No backend. Brief: [IDEA.md](IDEA.md). Tickets: [tickets/](tickets/).
 
 ## Rules
 - Follow [DEVELOPMENT.md](DEVELOPMENT.md) for every change.

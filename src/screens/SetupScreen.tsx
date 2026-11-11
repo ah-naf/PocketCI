@@ -28,11 +28,11 @@ export function SetupScreen({ navigation }: Props) {
       <View style={tw`flex-1 px-4 pb-8`}>
         <View style={tw`h-14 flex-row items-center justify-between`}>
           <AppText variant="small" mono tone="fg">
-            pipeline
+            pocket
             <AppText variant="small" mono tone="accent">
               /
             </AppText>
-            manager
+            ci
           </AppText>
           <AppText variant="label">Setup</AppText>
         </View>
