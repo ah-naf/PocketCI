@@ -1,6 +1,5 @@
-import type { ReactElement } from 'react';
-import { FlatList, View } from 'react-native';
-import { describeError } from '../api/errors';
+import { useMemo, useState, type ReactElement } from 'react';
+import { SectionList, View } from 'react-native';
 import type { Busy } from '../hooks/usePaginated';
 import { useTheme } from '../theme';
 import { AppRefreshControl } from './AppRefreshControl';
@@ -8,12 +7,26 @@ import { EmptyState } from './EmptyState';
 import { ErrorView } from './ErrorView';
 import { Input } from './Input';
 import { LoadingRow } from './LoadingRow';
+import { GroupHeader } from './GroupHeader';
+
+type Section<T> = { title: string; count: number; data: T[] };
+
+function buildSections<T>(data: T[], groupBy?: (item: T) => string): Section<T>[] {
+  if (!groupBy) return [{ title: '', count: data.length, data }];
+  const groups = new Map<string, T[]>();
+  for (const item of data) {
+    const title = groupBy(item);
+    groups.set(title, [...(groups.get(title) ?? []), item]);
+  }
+  return [...groups].map(([title, items]) => ({ title, count: items.length, data: items }));
+}
 
 type Props<T> = {
   data: T[];
   keyExtractor: (item: T) => string;
   renderItem: (item: T) => ReactElement;
   header?: ReactElement;
+  groupBy?: (item: T) => string;
   search: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder: string;
@@ -31,6 +44,7 @@ export function SearchList<T>({
   keyExtractor,
   renderItem,
   header,
+  groupBy,
   search,
   onSearchChange,
   searchPlaceholder,
@@ -43,6 +57,23 @@ export function SearchList<T>({
   emptyHint,
 }: Props<T>) {
   const { tw } = useTheme();
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const sections = useMemo(() => buildSections(data, groupBy), [data, groupBy]);
+  const grouped = sections.length > 1;
+  const searching = search.trim() !== '';
+  const isExpanded = (title: string) => !grouped || searching || expandedGroups.has(title);
+  const visibleSections = sections.map((section) => ({
+    ...section,
+    data: isExpanded(section.title) ? section.data : [],
+  }));
+
+  function toggleGroup(title: string) {
+    setExpandedGroups((current) => {
+      const next = new Set(current);
+      if (!next.delete(title)) next.add(title);
+      return next;
+    });
+  }
   return (
     <>
       <View style={tw`border-b border-line px-4 py-3`}>
@@ -54,9 +85,20 @@ export function SearchList<T>({
           clearButtonMode="while-editing"
         />
       </View>
-      <FlatList
-        data={data}
+      <SectionList
+        sections={visibleSections}
         keyExtractor={keyExtractor}
+        stickySectionHeadersEnabled={false}
+        renderSectionHeader={({ section }) =>
+          grouped ? (
+            <GroupHeader
+              title={section.title}
+              count={section.count}
+              expanded={isExpanded(section.title)}
+              onPress={searching ? undefined : () => toggleGroup(section.title)}
+            />
+          ) : null
+        }
         keyboardShouldPersistTaps="handled"
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}

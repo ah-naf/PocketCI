@@ -20,6 +20,8 @@ import { useTheme } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Projects'>;
 
+const groupByOwner = (project: ProjectRef) => project.path.split('/')[0];
+
 export function ProjectsScreen({ navigation }: Props) {
   const { tw } = useTheme();
   const provider = useProvider();
@@ -54,7 +56,7 @@ export function ProjectsScreen({ navigation }: Props) {
       key={project.key}
       title={project.name}
       subtitle={project.path}
-      tag={project.key}
+      tag={project.key === project.path ? undefined : project.key}
       onPress={() => openProject(project)}
     />
   );
@@ -91,6 +93,7 @@ export function ProjectsScreen({ navigation }: Props) {
         data={items}
         keyExtractor={(project) => project.key}
         renderItem={renderProject}
+        groupBy={groupByOwner}
         header={
           showRecent ? (
             <View>
