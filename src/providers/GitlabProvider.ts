@@ -17,10 +17,11 @@ import {
 import { fetchBranches, fetchProject, fetchProjects, type Project } from '../api/projects';
 import { fetchTrace } from '../api/trace';
 import { fetchCurrentUser } from '../api/user';
-import { DEFAULT_BASE_URL } from '../storage/secure';
+import { DEFAULT_BASE_URL, loadCredentials } from '../storage/secure';
+import { zipFileName } from '../utils/shareArtifact';
 import { parseLog } from '../utils/log';
 import { CiProvider } from './CiProvider';
-import type { Job, Notice, ProjectRef, Run, RunFilter, RunOptions, StartRunRequest } from './types';
+import type { Artifact, Job, Notice, ProjectRef, Run, RunFilter, RunOptions, StartRunRequest } from './types';
 
 const GITLAB_STATUS: Record<RunFilter, string | undefined> = {
   all: undefined,
@@ -160,6 +161,25 @@ export class GitlabProvider extends CiProvider {
 
   async listJobs(project: ProjectRef, runId: string) {
     return (await fetchJobs(Number(project.key), Number(runId))).map(toJob);
+  }
+
+  async listArtifacts(project: ProjectRef, runId: string): Promise<Artifact[]> {
+    const jobs = await fetchJobs(Number(project.key), Number(runId));
+    return jobs.flatMap((job) =>
+      job.artifacts_file
+        ? [{ id: String(job.id), name: `${job.name} artifacts`, sizeBytes: job.artifacts_file.size, jobName: job.name }]
+        : [],
+    );
+  }
+
+  async getArtifactDownload(project: ProjectRef, artifact: Artifact) {
+    const { baseUrl, token } = await loadCredentials('gitlab', DEFAULT_BASE_URL);
+    return {
+      url: `${baseUrl}/projects/${project.key}/jobs/${artifact.id}/artifacts`,
+      // Bearer, not PRIVATE-TOKEN: native HTTP clients drop Authorization on a cross-host redirect to object storage, custom headers are not dropped
+      headers: { Authorization: `Bearer ${token}` },
+      fileName: zipFileName(artifact.jobName ?? artifact.name),
+    };
   }
 
   async getRunVariables(project: ProjectRef, runId: string) {

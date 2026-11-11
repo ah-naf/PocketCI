@@ -33,6 +33,7 @@ export type Job = {
   started_at: string | null;
   finished_at: string | null;
   runner?: { description?: string | null } | null;
+  artifacts_file?: { size: number } | null;
   web_url: string;
 };
 

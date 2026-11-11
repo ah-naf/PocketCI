@@ -5,6 +5,7 @@ import { Linking, View } from 'react-native';
 import { ApiError, describeError } from '../api/errors';
 import { AppRefreshControl } from '../components/AppRefreshControl';
 import { AppText } from '../components/AppText';
+import { ArtifactSection } from '../components/ArtifactSection';
 import { DetailsCard } from '../components/DetailsCard';
 import { ErrorView } from '../components/ErrorView';
 import { LiveBadge } from '../components/LiveBadge';
@@ -13,6 +14,7 @@ import { PipelineSummaryCard } from '../components/PipelineSummaryCard';
 import { Screen } from '../components/Screen';
 import { StageSection } from '../components/StageSection';
 import { VariableList } from '../components/VariableList';
+import { useArtifactDownload } from '../hooks/useArtifactDownload';
 import { useAsync } from '../hooks/useAsync';
 import { useNow } from '../hooks/useNow';
 import { usePoll } from '../hooks/usePoll';
@@ -43,6 +45,10 @@ export function PipelineScreen({ navigation, route }: Props) {
   const loadVariables = useCallback(() => provider.getRunVariables(project, runId), [provider, project, runId]);
   const variables = useAsync(loadVariables);
 
+  const loadArtifacts = useCallback(() => provider.listArtifacts(project, runId), [provider, project, runId]);
+  const artifacts = useAsync(loadArtifacts);
+  const artifactDownload = useArtifactDownload(project);
+
   const [watching, setWatching] = useState(false);
 
   useFocusEffect(
@@ -61,6 +67,9 @@ export function PipelineScreen({ navigation, route }: Props) {
 
   const active = run.data ? isPipelineActive(run.data.status) : true;
   const now = useNow(active);
+  useEffect(() => {
+    if (!active) artifacts.poll();
+  }, [active, artifacts.poll]);
   usePoll(
     () => {
       run.poll();
@@ -127,10 +136,11 @@ export function PipelineScreen({ navigation, route }: Props) {
       scroll
       refreshControl={
         <AppRefreshControl
-          refreshing={run.refreshing || jobs.refreshing}
+          refreshing={run.refreshing || jobs.refreshing || artifacts.refreshing}
           onRefresh={() => {
             run.reload();
             jobs.reload();
+            artifacts.reload();
           }}
         />
       }
@@ -178,6 +188,11 @@ export function PipelineScreen({ navigation, route }: Props) {
           )}
         </View>
       )}
+      <ArtifactSection
+        artifacts={artifacts.data ?? []}
+        downloadingId={artifactDownload.downloadingId}
+        onDownload={artifactDownload.download}
+      />
       <View style={tw`pb-8 pt-4`}>
         {stages.map((stage) => (
           <StageSection

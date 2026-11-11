@@ -62,6 +62,10 @@ export type Job = {
   webUrl: string;
 };
 
+export type Artifact = { id: string; name: string; sizeBytes: number | null; jobName: string | null };
+
+export type ArtifactDownload = { url: string; headers: Record<string, string>; fileName: string };
+
 export type RunVariable = { key: string; value: string };
 
 export type LogChunk = { text: string; cursor: string | null; replace: boolean };

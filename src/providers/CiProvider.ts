@@ -1,5 +1,7 @@
 import type {
   Account,
+  Artifact,
+  ArtifactDownload,
   Credentials,
   Job,
   LogChunk,
@@ -46,6 +48,9 @@ export abstract class CiProvider {
   abstract listJobs(project: ProjectRef, runId: string): Promise<Job[]>;
   abstract getJob(project: ProjectRef, jobId: string): Promise<Job>;
   abstract getRunVariables(project: ProjectRef, runId: string): Promise<RunVariable[]>;
+
+  abstract listArtifacts(project: ProjectRef, runId: string): Promise<Artifact[]>;
+  abstract getArtifactDownload(project: ProjectRef, artifact: Artifact): Promise<ArtifactDownload>;
 
   abstract readLog(project: ProjectRef, jobId: string, cursor: string | null): Promise<LogChunk>;
   abstract cleanLog(raw: string): string[];

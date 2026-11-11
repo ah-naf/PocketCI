@@ -33,6 +33,8 @@ export type GithubJob = {
   html_url: string;
 };
 
+export type GithubArtifact = { id: number; name: string; size_in_bytes: number; expired: boolean };
+
 export type GithubContent = { name: string; path: string; type: string };
 
 const MAX_FILTER_PAGES = 5;
@@ -94,6 +96,12 @@ export function fetchRun(fullName: string, runId: string) {
 export async function fetchRunJobs(fullName: string, runId: string) {
   const query = buildQuery({ per_page: 100 });
   return (await githubGetJson<{ jobs: GithubJob[] }>(`/repos/${fullName}/actions/runs/${runId}/jobs${query}`)).jobs;
+}
+
+export async function fetchRunArtifacts(fullName: string, runId: string) {
+  const query = buildQuery({ per_page: 100 });
+  const path = `/repos/${fullName}/actions/runs/${runId}/artifacts${query}`;
+  return (await githubGetJson<{ artifacts: GithubArtifact[] }>(path)).artifacts;
 }
 
 export function fetchRunJob(fullName: string, jobId: string) {

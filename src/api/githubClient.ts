@@ -3,11 +3,11 @@ import { loadCredentials } from '../storage/secure';
 import { ApiError } from './errors';
 import { httpRequest, type HttpRequest } from './http';
 
-const GITHUB_API = 'https://api.github.com';
+export const GITHUB_API = 'https://api.github.com';
 
 type GithubRequest = HttpRequest & { token?: string };
 
-async function getStoredToken() {
+export async function getStoredToken() {
   const { token } = await loadCredentials('github', GITHUB_API);
   if (!token) throw new ApiError('http', 401, 'No access token set');
   return token;

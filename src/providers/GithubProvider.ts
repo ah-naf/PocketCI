@@ -7,6 +7,7 @@ import {
   fetchRepoBranches,
   fetchRepos,
   fetchRun,
+  fetchRunArtifacts,
   fetchRunJob,
   fetchRunJobs,
   fetchRuns,
@@ -19,13 +20,14 @@ import {
   type GithubRepo,
   type GithubRun,
 } from '../api/github';
-import { fetchGithubUser, githubRequest } from '../api/githubClient';
+import { fetchGithubUser, getStoredToken, GITHUB_API, githubRequest } from '../api/githubClient';
 import { ApiError } from '../api/errors';
 import { parseWorkflowTarget } from '../api/githubWorkflows';
+import { zipFileName } from '../utils/shareArtifact';
 import { cleanGithubLog } from '../utils/githubLog';
 import { mapGithubStatus } from '../utils/githubStatus';
 import { CiProvider } from './CiProvider';
-import type { Credentials, Job, ProjectRef, Run, RunFilter, RunOptions, RunTarget, StartRunRequest } from './types';
+import type { Artifact, Credentials, Job, ProjectRef, Run, RunFilter, RunOptions, RunTarget, StartRunRequest } from './types';
 
 const GITHUB_STATUS: Record<RunFilter, string | undefined> = {
   all: undefined,
@@ -224,6 +226,21 @@ export class GithubProvider extends CiProvider {
 
   cleanLog(raw: string) {
     return cleanGithubLog(raw);
+  }
+
+  async listArtifacts(project: ProjectRef, runId: string): Promise<Artifact[]> {
+    const artifacts = await fetchRunArtifacts(project.key, runId);
+    return artifacts
+      .filter(({ expired }) => !expired)
+      .map(({ id, name, size_in_bytes }) => ({ id: String(id), name, sizeBytes: size_in_bytes, jobName: null }));
+  }
+
+  async getArtifactDownload(project: ProjectRef, artifact: Artifact) {
+    return {
+      url: `${GITHUB_API}/repos/${project.key}/actions/artifacts/${artifact.id}/zip`,
+      headers: { Authorization: `Bearer ${await getStoredToken()}` },
+      fileName: zipFileName(artifact.name),
+    };
   }
 
   async retryRun(project: ProjectRef, runId: string) {
