@@ -5,7 +5,8 @@ Personal mobile app (Expo, React Native, TypeScript) for a self-hosted GitLab. I
 ## Status
 
 Features:
-- Token setup and Settings
+- Token setup and Settings for GitLab and GitHub (GitHub browsing and runs are coming, see the tickets)
+- Switch between GitLab and GitHub from the Projects screen
 - Project list with search (projects the token's user is a member of)
 - Searchable branch list
 - Pipeline form from the branch's CI variables, and trigger
@@ -54,7 +55,11 @@ Both scripts use `--localhost`, so the phone connects over the USB cable. This m
 
 The release APK is signed with Expo's default debug key. That is fine for installing on your own phone.
 
-## Access token
+## Providers and access tokens
+
+The app is in one provider mode at a time. Switch with the provider button at the top left of the Projects screen. Each provider keeps its own token, and removing one never touches the other.
+
+### GitLab
 
 1. In GitLab open Preferences → Access tokens.
 2. Create a classic personal access token or a project access token with the `api` scope. The scope is required to create pipelines.
@@ -64,10 +69,15 @@ Do not use a pipeline trigger token (it cannot read anything). Avoid fine-graine
 
 The base URL defaults to `https://gitlab.niftycoders.net/api/v4` and can be changed in Settings.
 
+### GitHub (github.com)
+
+Create a classic personal access token under Settings → Developer settings → Personal access tokens with the `repo` and `workflow` scopes. If your repositories belong to an organization that uses SSO, authorize the token for that organization. There is no base URL to set.
+
 ## Project structure
 
 ```
-src/api         GitLab client, error mapping, API calls
+src/api         GitLab and GitHub clients, error mapping, API calls
+src/providers   CiProvider abstract class and the GitLab and GitHub implementations
 src/components  Reusable UI components
 src/hooks       Shared stateful logic
 src/navigation  Navigator and route types

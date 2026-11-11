@@ -7,6 +7,7 @@ import { ConnectionStatusBanner } from '../components/ConnectionStatusBanner';
 import { Screen } from '../components/Screen';
 import { useConnection } from '../hooks/useConnection';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useProvider } from '../providers/ProviderContext';
 import { deleteToken } from '../storage/secure';
 import { useTheme } from '../theme';
 
@@ -14,16 +15,17 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 export function SettingsScreen({ navigation }: Props) {
   const { tw } = useTheme();
+  const provider = useProvider();
   const connection = useConnection();
 
   function confirmRemoveToken() {
-    Alert.alert('Remove token?', 'The token is deleted from this device. Saved projects stay.', [
+    Alert.alert(`Remove ${provider.displayName} token?`, 'The token is deleted from this device. Recent projects stay.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove',
         style: 'destructive',
         onPress: async () => {
-          await deleteToken();
+          await deleteToken(provider.id);
           navigation.reset({ index: 0, routes: [{ name: 'Setup' }] });
         },
       },
@@ -33,6 +35,7 @@ export function SettingsScreen({ navigation }: Props) {
   return (
     <Screen
       title="Settings"
+      subtitle={provider.displayName}
       onBack={navigation.canGoBack() ? navigation.goBack : undefined}
       scroll
     >
@@ -70,7 +73,7 @@ export function SettingsScreen({ navigation }: Props) {
         <View style={tw`mt-auto gap-2.5 border-t border-line px-4 pb-8 pt-4`}>
           <AppText variant="label">Danger zone</AppText>
           <Button variant="danger" label="Remove token" onPress={confirmRemoveToken} />
-          <AppText variant="caption">Deletes the token from this device. Saved projects stay.</AppText>
+          <AppText variant="caption">Deletes the {provider.displayName} token from this device.</AppText>
         </View>
       </View>
     </Screen>

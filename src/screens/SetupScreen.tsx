@@ -7,12 +7,14 @@ import { ConnectionStatusBanner } from '../components/ConnectionStatusBanner';
 import { Screen } from '../components/Screen';
 import { useConnection } from '../hooks/useConnection';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Setup'>;
 
 export function SetupScreen({ navigation }: Props) {
   const { tw } = useTheme();
+  const provider = useProvider();
   const connection = useConnection();
 
   async function testAndContinue() {
@@ -36,11 +38,11 @@ export function SetupScreen({ navigation }: Props) {
         </View>
         <View style={tw`gap-3 pb-7 pt-8`}>
           <AppText variant="display" style={tw`text-[34px] leading-[38px]`}>
-            Connect your GitLab
+            Connect your {provider.displayName}
           </AppText>
           <AppText variant="body" tone="muted">
-            This app talks to one self-hosted GitLab. Paste a personal access token to get started.
-            Nothing else works without it.
+            Paste a {provider.displayName} personal access token to get started. Nothing else works
+            without it.
           </AppText>
         </View>
         <ConnectionForm

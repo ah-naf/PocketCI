@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { describeError, type FriendlyError } from '../api/errors';
 import { useProvider } from '../providers/ProviderContext';
-import { DEFAULT_BASE_URL, loadSettings, saveSettings } from '../storage/secure';
+import { loadCredentials, saveCredentials } from '../storage/secure';
 
 export type ConnectionStatus =
   | { kind: 'idle' }
@@ -12,18 +12,22 @@ export type ConnectionStatus =
 
 export function useConnection() {
   const provider = useProvider();
-  const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
+  const { defaultBaseUrl, editableBaseUrl } = provider.setup;
+  const [baseUrl, setBaseUrl] = useState(defaultBaseUrl);
   const [token, setToken] = useState('');
   const [status, setStatus] = useState<ConnectionStatus>({ kind: 'idle' });
 
   useEffect(() => {
-    loadSettings().then((settings) => {
-      setBaseUrl(settings.baseUrl);
-      setToken(settings.token);
+    loadCredentials(provider.id, defaultBaseUrl).then((credentials) => {
+      setBaseUrl(credentials.baseUrl);
+      setToken(credentials.token);
     });
-  }, []);
+  }, [provider, defaultBaseUrl]);
 
-  const cleaned = { baseUrl: baseUrl.trim().replace(/\/+$/, ''), token: token.trim() };
+  const cleaned = {
+    baseUrl: editableBaseUrl ? baseUrl.trim().replace(/\/+$/, '') : defaultBaseUrl,
+    token: token.trim(),
+  };
 
   async function test() {
     setStatus({ kind: 'testing' });
@@ -32,13 +36,13 @@ export function useConnection() {
       setStatus({ kind: 'ok', username });
       return true;
     } catch (error) {
-      setStatus({ kind: 'error', error: describeError(error) });
+      setStatus({ kind: 'error', error: describeError(error, provider.displayName) });
       return false;
     }
   }
 
   async function save() {
-    await saveSettings(cleaned);
+    await saveCredentials(provider.id, cleaned);
     setStatus({ kind: 'saved' });
   }
 

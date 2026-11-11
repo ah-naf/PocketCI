@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Input } from './Input';
@@ -13,30 +14,27 @@ type Props = {
 
 export function ConnectionForm({ baseUrl, token, onChangeBaseUrl, onChangeToken, tokenInvalid }: Props) {
   const { tw } = useTheme();
+  const { displayName, setup } = useProvider();
   return (
     <View style={tw`gap-4`}>
-      <Input
-        label="GitLab base URL"
-        value={baseUrl}
-        onChangeText={onChangeBaseUrl}
-        keyboardType="url"
-      />
+      {setup.editableBaseUrl && (
+        <Input
+          label={`${displayName} base URL`}
+          value={baseUrl}
+          onChangeText={onChangeBaseUrl}
+          keyboardType="url"
+        />
+      )}
       <View style={tw`gap-1.5`}>
         <Input
           label="Access token"
           value={token}
           onChangeText={onChangeToken}
-          placeholder="glpat-…"
+          placeholder="Paste your token"
           invalid={tokenInvalid}
           secure
         />
-        <AppText variant="caption">
-          The token needs the{' '}
-          <AppText variant="caption" mono tone="accent">
-            api
-          </AppText>{' '}
-          scope. Create one in GitLab under Preferences → Access tokens.
-        </AppText>
+        <AppText variant="caption">{setup.tokenHint}</AppText>
       </View>
     </View>
   );

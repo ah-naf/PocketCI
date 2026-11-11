@@ -9,9 +9,31 @@ import { useEffect, useState } from 'react';
 import { Appearance } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { ProviderRoot } from './src/providers/ProviderContext';
-import { loadSettings } from './src/storage/secure';
+import { ProviderRoot, useProvider } from './src/providers/ProviderContext';
+import { loadCredentials } from './src/storage/secure';
 import { loadThemePreference } from './src/storage/themePreference';
+
+function AppContent() {
+  const provider = useProvider();
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    loadCredentials(provider.id, provider.setup.defaultBaseUrl).then(
+      ({ token }) => setHasToken(token !== ''),
+      () => setHasToken(false),
+    );
+    // Only the provider active at launch decides the first screen; later switches navigate themselves.
+  }, []);
+
+  if (hasToken === null) return null;
+
+  return (
+    <>
+      <RootNavigator initialRouteName={hasToken ? 'Projects' : 'Setup'} />
+      <StatusBar style="auto" />
+    </>
+  );
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -21,25 +43,21 @@ export default function App() {
     JetBrainsMono_400Regular,
     JetBrainsMono_500Medium,
   });
-  const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [themeReady, setThemeReady] = useState(false);
 
   useEffect(() => {
-    Promise.all([loadSettings(), loadThemePreference()]).then(
-      ([{ token }, theme]) => {
-        Appearance.setColorScheme(theme ?? 'unspecified');
-        setHasToken(token !== '');
-      },
-      () => setHasToken(false),
-    );
+    loadThemePreference().then((theme) => {
+      Appearance.setColorScheme(theme ?? 'unspecified');
+      setThemeReady(true);
+    });
   }, []);
 
-  if (!fontsLoaded || hasToken === null) return null;
+  if (!fontsLoaded || !themeReady) return null;
 
   return (
     <SafeAreaProvider>
       <ProviderRoot>
-        <RootNavigator initialRouteName={hasToken ? 'Projects' : 'Setup'} />
-        <StatusBar style="auto" />
+        <AppContent />
       </ProviderRoot>
     </SafeAreaProvider>
   );
