@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Alert, View } from 'react-native';
 import { AppText } from '../components/AppText';
+import { Avatar } from '../components/Avatar';
 import { Button } from '../components/Button';
 import { ConnectionForm } from '../components/ConnectionForm';
 import { ConnectionStatusBanner } from '../components/ConnectionStatusBanner';
@@ -43,7 +44,24 @@ export function SettingsScreen({ navigation }: Props) {
     >
       <View style={tw`flex-1`}>
         <View style={tw`gap-4 px-4`}>
-          <AppText variant="label" style={tw`pt-5`}>
+          {connection.account && (
+            <View style={tw`mt-5 flex-row items-center gap-3 rounded-2xl border border-line bg-card p-3`}>
+              <Avatar
+                uri={connection.account.avatarUrl}
+                name={connection.account.name ?? connection.account.username}
+                size={44}
+              />
+              <View style={tw`min-w-0 flex-1`}>
+                <AppText variant="title" numberOfLines={1}>
+                  {connection.account.name ?? connection.account.username}
+                </AppText>
+                <AppText variant="small" mono numberOfLines={1} style={tw`text-xs`}>
+                  @{connection.account.username} · {provider.displayName}
+                </AppText>
+              </View>
+            </View>
+          )}
+          <AppText variant="label" style={connection.account ? undefined : tw`pt-5`}>
             Connection
           </AppText>
           <ConnectionForm

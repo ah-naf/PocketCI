@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { describeError, type FriendlyError } from '../api/errors';
 import { useProvider } from '../providers/ProviderContext';
+import type { Account } from '../providers/types';
 import { clearRecentProjects } from '../storage/recentProjects';
 import { loadCredentials, saveCredentials } from '../storage/secure';
 
@@ -17,11 +18,14 @@ export function useConnection() {
   const [baseUrl, setBaseUrl] = useState(defaultBaseUrl);
   const [token, setToken] = useState('');
   const [status, setStatus] = useState<ConnectionStatus>({ kind: 'idle' });
+  const [account, setAccount] = useState<Account | null>(null);
 
   useEffect(() => {
+    setAccount(null);
     loadCredentials(provider.id, defaultBaseUrl).then((credentials) => {
       setBaseUrl(credentials.baseUrl);
       setToken(credentials.token);
+      if (credentials.token) provider.verifyCredentials(credentials).then(setAccount, () => undefined);
     });
   }, [provider, defaultBaseUrl]);
 
@@ -33,8 +37,9 @@ export function useConnection() {
   async function test() {
     setStatus({ kind: 'testing' });
     try {
-      const username = await provider.verifyCredentials(cleaned);
-      setStatus({ kind: 'ok', username });
+      const verified = await provider.verifyCredentials(cleaned);
+      setAccount(verified);
+      setStatus({ kind: 'ok', username: verified.username });
       return true;
     } catch (error) {
       setStatus({ kind: 'error', error: describeError(error, provider.displayName) });
@@ -52,6 +57,7 @@ export function useConnection() {
   }
 
   return {
+    account,
     baseUrl,
     setBaseUrl,
     token,
