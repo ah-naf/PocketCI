@@ -1,6 +1,6 @@
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, View } from 'react-native';
 import { AppRefreshControl } from '../components/AppRefreshControl';
 import { AppText } from '../components/AppText';
@@ -16,6 +16,7 @@ import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
+import { confirmAction } from '../utils/confirmAction';
 import { confirmCancel } from '../utils/confirmCancel';
 import { formatPipelineElapsed } from '../utils/format';
 import { groupJobsByStage } from '../utils/stages';
@@ -24,6 +25,7 @@ import { isPipelineActive } from '../utils/status';
 type Props = NativeStackScreenProps<RootStackParamList, 'Pipeline'>;
 
 const POLL_INTERVAL_MS = 4000;
+const WATCH_AFTER_CHANGE_MS = 20000;
 
 export function PipelineScreen({ navigation, route }: Props) {
   const { project, runId } = route.params;
@@ -36,12 +38,21 @@ export function PipelineScreen({ navigation, route }: Props) {
   const run = useAsync(loadRun);
   const jobs = useAsync(loadJobs);
 
+  const [watching, setWatching] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       run.poll();
       jobs.poll();
+      setWatching(true);
     }, [run.poll, jobs.poll]),
   );
+
+  useEffect(() => {
+    if (!watching) return;
+    const timer = setTimeout(() => setWatching(false), WATCH_AFTER_CHANGE_MS);
+    return () => clearTimeout(timer);
+  }, [watching]);
 
   const active = run.data ? isPipelineActive(run.data.status) : true;
   const now = useNow(active);
@@ -51,7 +62,7 @@ export function PipelineScreen({ navigation, route }: Props) {
       jobs.poll();
     },
     POLL_INTERVAL_MS,
-    active && focused,
+    (active || watching) && focused,
   );
 
   const cancelRunningRun = () =>
@@ -59,6 +70,27 @@ export function PipelineScreen({ navigation, route }: Props) {
       run.poll();
       jobs.poll();
     });
+
+  const wasCanceled = run.data?.status === 'canceled';
+  const retryLabel = wasCanceled ? 'Run again' : 'Retry failed jobs';
+
+  const retryRun = () =>
+    confirmAction(
+      {
+        title: `${retryLabel}?`,
+        message: wasCanceled
+          ? `${provider.displayName} starts the canceled jobs again from the beginning. Work that was already done is not resumed.`
+          : `${provider.displayName} runs the failed jobs in this ${provider.labels.run} again.`,
+        confirmLabel: wasCanceled ? 'Run again' : 'Retry',
+        dismissLabel: 'Not now',
+      },
+      () => provider.retryRun(project, runId),
+      () => {
+        run.poll();
+        jobs.poll();
+        setWatching(true);
+      },
+    );
 
   const forceCancelRunningRun = () =>
     confirmCancel(
@@ -102,6 +134,8 @@ export function PipelineScreen({ navigation, route }: Props) {
           openLabel={`Open in ${provider.displayName}`}
           cancelLabel={`Cancel ${provider.labels.run}`}
           onOpenExternal={() => Linking.openURL(run.data?.webUrl ?? '')}
+          retryLabel={retryLabel}
+          onRetry={run.data.status === 'failed' || wasCanceled ? retryRun : undefined}
           onCancel={active && run.data.status !== 'canceling' ? cancelRunningRun : undefined}
           onForceCancel={active && provider.capabilities.forceCancelRun ? forceCancelRunningRun : undefined}
         />

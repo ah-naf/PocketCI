@@ -11,11 +11,13 @@ type Props = {
   openLabel: string;
   cancelLabel: string;
   onOpenExternal: () => void;
+  retryLabel?: string;
+  onRetry?: () => void;
   onCancel?: () => void;
   onForceCancel?: () => void;
 };
 
-export function PipelineSummaryCard({ pipeline, elapsed, openLabel, cancelLabel, onOpenExternal, onCancel, onForceCancel }: Props) {
+export function PipelineSummaryCard({ pipeline, elapsed, openLabel, cancelLabel, onOpenExternal, retryLabel, onRetry, onCancel, onForceCancel }: Props) {
   const { tw } = useTheme();
   return (
     <View style={tw`mx-4 gap-4 rounded-2xl border border-line bg-card p-4`}>
@@ -40,6 +42,7 @@ export function PipelineSummaryCard({ pipeline, elapsed, openLabel, cancelLabel,
         </View>
       </View>
       <Button variant="ghost" label={openLabel} onPress={onOpenExternal} />
+      {onRetry && <Button variant="primary" label={retryLabel ?? 'Retry failed jobs'} onPress={onRetry} />}
       {onCancel && <Button variant="danger" label={cancelLabel} onPress={onCancel} />}
       {onForceCancel && <Button variant="danger" label="Force cancel" onPress={onForceCancel} />}
     </View>

@@ -79,6 +79,22 @@ export function JobLogScreen({ navigation, route }: Props) {
       },
     );
 
+  const wasCanceled = status === 'canceled';
+
+  const retryFinishedJob = () =>
+    confirmAction(
+      {
+        title: wasCanceled ? 'Run this job again?' : 'Retry this job?',
+        message: wasCanceled
+          ? `${provider.displayName} starts this job again from the beginning. Work that was already done is not resumed.`
+          : `${provider.displayName} runs this job again.`,
+        confirmLabel: wasCanceled ? 'Run again' : 'Retry job',
+        dismissLabel: 'Not now',
+      },
+      () => provider.retryJob(project, jobId),
+      navigation.goBack,
+    );
+
   const cancelRunningJob = () =>
     confirmCancel('job', provider.displayName, () => provider.cancelJob(project, jobId), () => {
       job.poll();
@@ -113,6 +129,13 @@ export function JobLogScreen({ navigation, route }: Props) {
         </>
       }
     >
+      {(status === 'failed' || wasCanceled) && (
+        <NoticeBar
+          text={wasCanceled ? 'This job was canceled.' : 'This job failed.'}
+          actionLabel={wasCanceled ? 'Run again' : 'Retry job'}
+          onAction={retryFinishedJob}
+        />
+      )}
       {status === 'manual' && provider.capabilities.playJob && (
         <NoticeBar text="This job waits for a manual start." actionLabel="Run job" onAction={playManualJob} />
       )}
