@@ -8,6 +8,7 @@ import { Screen } from '../components/Screen';
 import { useConnection } from '../hooks/useConnection';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
+import { clearRecentProjects } from '../storage/recentProjects';
 import { deleteToken } from '../storage/secure';
 import { useTheme } from '../theme';
 
@@ -26,6 +27,7 @@ export function SettingsScreen({ navigation }: Props) {
         style: 'destructive',
         onPress: async () => {
           await deleteToken(provider.id);
+          await clearRecentProjects(provider.id);
           navigation.reset({ index: 0, routes: [{ name: 'Setup' }] });
         },
       },
