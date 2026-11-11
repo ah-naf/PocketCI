@@ -18,7 +18,7 @@ export function SetupScreen({ navigation }: Props) {
   async function testAndContinue() {
     if (!(await connection.test())) return;
     await connection.save();
-    navigation.replace('Settings');
+    navigation.replace('Projects');
   }
 
   return (

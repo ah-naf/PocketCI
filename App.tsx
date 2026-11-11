@@ -31,7 +31,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <RootNavigator initialRouteName={hasToken ? 'Settings' : 'Setup'} />
+      <RootNavigator initialRouteName={hasToken ? 'Projects' : 'Setup'} />
       <StatusBar style="auto" />
     </SafeAreaProvider>
   );
