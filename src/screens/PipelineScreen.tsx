@@ -154,7 +154,7 @@ export function PipelineScreen({ navigation, route }: Props) {
         <View style={tw`mx-4 mt-3`}>
           <DetailsCard
             rows={[
-              { label: 'Started by', value: run.data.triggeredBy },
+              { label: 'Started by', value: run.data.triggeredBy, avatar: { uri: run.data.triggeredByAvatar } },
               { label: 'Triggered via', value: run.data.source, mono: true },
               { label: 'Commit', value: run.data.commitTitle },
               { label: 'Created', value: formatDateTime(run.data.createdAt) },

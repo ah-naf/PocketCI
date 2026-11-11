@@ -1,8 +1,9 @@
 import { View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
+import { Avatar } from './Avatar';
 
-type Row = { label: string; value?: string | null; mono?: boolean };
+type Row = { label: string; value?: string | null; mono?: boolean; avatar?: { uri: string | null } };
 
 export function DetailsCard({ rows }: { rows: Row[] }) {
   const { tw } = useTheme();
@@ -18,9 +19,12 @@ export function DetailsCard({ rows }: { rows: Row[] }) {
           <AppText variant="caption" style={tw`w-24 pt-0.5`}>
             {row.label}
           </AppText>
-          <AppText mono={row.mono} selectable style={tw`flex-1 text-[13px] leading-[19px]`}>
-            {row.value}
-          </AppText>
+          <View style={tw`flex-1 flex-row items-center gap-2`}>
+            {row.avatar && <Avatar uri={row.avatar.uri} name={row.value ?? ''} size={22} />}
+            <AppText mono={row.mono} selectable style={tw`flex-1 text-[13px] leading-[19px]`}>
+              {row.value}
+            </AppText>
+          </View>
         </View>
       ))}
     </View>
