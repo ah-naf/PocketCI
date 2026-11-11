@@ -49,7 +49,7 @@ export function JobLogScreen({ navigation, route }: Props) {
   usePoll(
     () => {
       job.poll();
-      log.poll();
+      if (provider.capabilities.liveLogs) log.poll();
     },
     POLL_INTERVAL_MS,
     live && focused,
@@ -90,7 +90,8 @@ export function JobLogScreen({ navigation, route }: Props) {
       }
       headerRight={
         <>
-          {live && <LiveBadge />}
+          {live && provider.capabilities.liveLogs && <LiveBadge />}
+          {!provider.capabilities.liveLogs && <TextButton label="Refresh" onPress={log.reload} />}
           <TextButton label={copied ? 'Copied' : 'Copy'} onPress={copyLog} />
           <TextButton label="Bottom" onPress={scroll.scrollToBottom} />
         </>
