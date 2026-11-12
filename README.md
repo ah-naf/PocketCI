@@ -13,6 +13,7 @@ Features:
 - Live pipeline status with jobs grouped by stage
 - Job logs with live follow, copy, and a last-2000-lines view
 - Open merge requests (GitLab) and pull requests (GitHub): description, comments, and approval state
+- Merge a merge request or pull request from its screen when your token's user is allowed to. It merges the commit you saw, so a push made after you opened the screen is rejected. Branch protection can still refuse a merge, and the provider's reason is shown
 - Responses are cached in memory to stay under API rate limits; pull to refresh always reloads
 
 ## Requirements
