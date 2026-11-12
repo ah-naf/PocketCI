@@ -4,9 +4,9 @@ import { getStatusStyle } from '../theme/status';
 import { AppText } from './AppText';
 import { PulseDot } from './PulseDot';
 
-type Props = { status: string; large?: boolean };
+type Props = { status: string; label?: string; large?: boolean };
 
-export function StatusBadge({ status, large }: Props) {
+export function StatusBadge({ status, label: customLabel, large }: Props) {
   const { tw } = useTheme();
   const { color, label, textColor } = getStatusStyle(status);
   return (
@@ -23,7 +23,7 @@ export function StatusBadge({ status, large }: Props) {
         tone={textColor ?? color}
         style={tw`font-sans-semibold ${large ? 'text-sm' : ''}`}
       >
-        {label}
+        {customLabel ?? label}
       </AppText>
     </View>
   );

@@ -9,6 +9,7 @@ import { useSearchPage } from '../hooks/useSearchPage';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
+import { ChangeRequestList } from './ChangeRequestList';
 import { LatestRuns } from './LatestRuns';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Branches'>;
@@ -19,7 +20,7 @@ export function BranchesScreen({ navigation, route }: Props) {
   const { project } = route.params;
   const provider = useProvider();
   const { tw } = useTheme();
-  const [view, setView] = useState<'branches' | 'runs'>('branches');
+  const [view, setView] = useState<'branches' | 'runs' | 'requests'>('branches');
   const [defaultBranch, setDefaultBranch] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,7 +45,8 @@ export function BranchesScreen({ navigation, route }: Props) {
         <SegmentedControl
           options={[
             { id: 'branches', label: 'Branches' },
-            { id: 'runs', label: `Latest ${provider.labels.runs}` },
+            { id: 'runs', label: provider.labels.runs.charAt(0).toUpperCase() + provider.labels.runs.slice(1) },
+            { id: 'requests', label: provider.labels.changeRequests },
           ]}
           value={view}
           onChange={setView}
@@ -52,6 +54,11 @@ export function BranchesScreen({ navigation, route }: Props) {
       </View>
       {view === 'runs' ? (
         <LatestRuns project={project} onOpenRun={(runId) => navigation.navigate('Pipeline', { project, runId })} />
+      ) : view === 'requests' ? (
+        <ChangeRequestList
+          project={project}
+          onOpen={(requestId) => navigation.navigate('ChangeRequest', { project, requestId })}
+        />
       ) : (
       <SearchList
         data={rows}
