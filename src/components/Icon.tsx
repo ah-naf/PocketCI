@@ -31,6 +31,7 @@ const icons = {
   ),
   dots: <Path d="M6 12h.5M12 12h.5M18 12h.5" />,
   minus: <Path d="M6 12h12" />,
+  plus: <Path d="M12 6v12M6 12h12" />,
   play: <Path d="M9 6l10 6-10 6z" />,
   search: (
     <>
