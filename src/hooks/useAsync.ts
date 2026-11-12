@@ -1,45 +1,36 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
+import { useProvider } from '../providers/ProviderContext';
 
-type Mode = 'initial' | 'refresh' | 'silent';
+type Options<T> = { staleTimeMs?: number; refetchIntervalMs?: (data: T | undefined) => number | false };
 
-type State<T> = { data?: T; error?: unknown; loading: boolean; refreshing: boolean };
+export function useAsync<T>(key: readonly unknown[], load: () => Promise<T>, options: Options<T> = {}) {
+  const provider = useProvider();
+  const focused = useIsFocused();
+  const [refreshing, setRefreshing] = useState(false);
 
-export function useAsync<T>(load: () => Promise<T>) {
-  const [state, setState] = useState<State<T>>({ loading: true, refreshing: false });
-  const latestRequest = useRef(0);
+  const query = useQuery({
+    queryKey: [provider.id, ...key],
+    queryFn: load,
+    staleTime: options.staleTimeMs,
+    refetchInterval: (current) => (focused ? (options.refetchIntervalMs?.(current.state.data) ?? false) : false),
+  });
+  const { refetch } = query;
 
-  const run = useCallback(
-    async (mode: Mode) => {
-      const request = ++latestRequest.current;
-      if (mode !== 'silent') {
-        setState((current) => ({
-          ...current,
-          loading: mode === 'initial',
-          refreshing: mode === 'refresh',
-          error: undefined,
-        }));
-      }
-      try {
-        const data = await load();
-        if (request === latestRequest.current) setState({ data, loading: false, refreshing: false });
-      } catch (error) {
-        if (request !== latestRequest.current) return;
-        setState((current) =>
-          mode === 'silent'
-            ? { ...current, loading: false, refreshing: false }
-            : { error, loading: false, refreshing: false },
-        );
-      }
-    },
-    [load],
-  );
+  const reload = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+  const poll = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
-  useEffect(() => {
-    run('initial');
-  }, [run]);
-
-  const reload = useCallback(() => run('refresh'), [run]);
-  const poll = useCallback(() => run('silent'), [run]);
-
-  return { ...state, reload, poll };
+  // A failed background refetch keeps the data on screen instead of replacing it with an error.
+  const error = query.data === undefined ? query.error : undefined;
+  return { data: query.data, error: error ?? undefined, loading: query.isLoading, refreshing, reload, poll };
 }

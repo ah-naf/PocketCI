@@ -10,6 +10,12 @@ import {
   fetchRunArtifacts,
   fetchRunJob,
   fetchRunJobs,
+  fetchCanPush,
+  fetchPull,
+  fetchPullComments,
+  fetchPullReviews,
+  fetchPulls,
+  mergePull,
   fetchRuns,
   fetchWorkflowFiles,
   fetchWorkflowRuns,
@@ -17,9 +23,13 @@ import {
   rerunRun,
   rerunJob,
   type GithubJob,
+  type GithubPullSummary,
   type GithubRepo,
+  type GithubReview,
   type GithubRun,
 } from '../api/github';
+import { BRANCH_CHANGED, TOKEN_CANNOT_MERGE, toMergeError } from '../api/mergeErrors';
+import { queryClient } from './QueryProvider';
 import { fetchGithubUser, getStoredToken, GITHUB_API, githubRequest } from '../api/githubClient';
 import { ApiError } from '../api/errors';
 import { parseWorkflowTarget } from '../api/githubWorkflows';
@@ -27,7 +37,20 @@ import { zipFileName } from '../utils/shareArtifact';
 import { cleanGithubLog } from '../utils/githubLog';
 import { mapGithubStatus } from '../utils/githubStatus';
 import { CiProvider } from './CiProvider';
-import type { Artifact, Credentials, Job, ProjectRef, Run, RunFilter, RunOptions, RunTarget, StartRunRequest } from './types';
+import type {
+  Approval,
+  Artifact,
+  ChangeRequestFilter,
+  ChangeRequestSummary,
+  Credentials,
+  Job,
+  ProjectRef,
+  Run,
+  RunFilter,
+  RunOptions,
+  RunTarget,
+  StartRunRequest,
+} from './types';
 
 const GITHUB_STATUS: Record<RunFilter, string | undefined> = {
   all: undefined,
@@ -75,6 +98,37 @@ const toJob = (job: GithubJob): Job => ({
   webUrl: job.html_url,
 });
 
+const toChangeRequestSummary = (pull: GithubPullSummary): ChangeRequestSummary => ({
+  id: String(pull.number),
+  title: pull.title,
+  author: pull.user?.login ?? 'ghost',
+  authorAvatar: pull.user?.avatar_url ?? null,
+  sourceBranch: pull.head.ref,
+  targetBranch: pull.base.ref,
+  state: pull.state === 'open' ? 'open' : pull.merged_at ? 'merged' : 'closed',
+  draft: pull.draft ?? false,
+  updatedAt: pull.updated_at,
+});
+
+const BLOCKED_REASON: Record<string, string> = {
+  dirty: 'Has conflicts',
+  blocked: 'Blocked by required reviews or checks',
+  behind: 'Branch is behind',
+  draft: 'Marked as draft',
+};
+
+// A reviewer's latest approve or request-changes review counts; comment-only reviews do not change it, a dismissed one clears it.
+function reduceReviews(reviews: GithubReview[]): Approval {
+  const latest = new Map<string, string>();
+  for (const { user, state } of reviews) {
+    if (user && ['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(state)) latest.set(user.login, state);
+  }
+  const reviewersWith = (state: string) => [...latest].filter(([, value]) => value === state).map(([login]) => login);
+  const approvedBy = reviewersWith('APPROVED');
+  const changesRequestedBy = reviewersWith('CHANGES_REQUESTED');
+  return { approved: approvedBy.length > 0 && changesRequestedBy.length === 0, approvedBy, changesRequestedBy };
+}
+
 const MAX_DISPATCH_INPUTS = 25;
 const FIND_RUN_TIMEOUT_MS = 15000;
 const FIND_RUN_INTERVAL_MS = 2000;
@@ -110,6 +164,8 @@ export class GithubProvider extends CiProvider {
     run: 'workflow run',
     runs: 'workflow runs',
     target: 'workflow',
+    changeRequest: 'Pull request',
+    changeRequests: 'Pull requests',
   };
   readonly capabilities = { cancelJob: false, liveLogs: false, forceCancelRun: true, playJob: false, runVariables: false };
   readonly setup = {
@@ -251,6 +307,61 @@ export class GithubProvider extends CiProvider {
 
   async retryJob(project: ProjectRef, jobId: string) {
     await rerunJob(project.key, jobId);
+  }
+
+  async listChangeRequests(project: ProjectRef, filter: ChangeRequestFilter, page: number) {
+    const result = await fetchPulls(project.key, filter, page);
+    return { ...result, items: result.items.map(toChangeRequestSummary) };
+  }
+
+  async getChangeRequest(project: ProjectRef, id: string) {
+    const [first, reviews, canPush] = await Promise.all([
+      fetchPull(project.key, id),
+      fetchPullReviews(project.key, id),
+      queryClient.fetchQuery({
+        queryKey: ['github', 'canPush', project.key],
+        queryFn: () => fetchCanPush(project.key),
+        staleTime: 5 * 60_000,
+      }),
+    ]);
+    // GitHub computes mergeability lazily, so mergeable is null on the first read
+    let pull = first;
+    if (pull.mergeable === null && pull.state === 'open') {
+      await sleep(FIND_RUN_INTERVAL_MS);
+      pull = await fetchPull(project.key, id);
+    }
+    const summary = toChangeRequestSummary(pull);
+    return {
+      ...summary,
+      description: pull.body ?? '',
+      webUrl: pull.html_url,
+      approval: reduceReviews(reviews),
+      blockedReason: summary.state === 'open' ? (BLOCKED_REASON[pull.mergeable_state] ?? null) : null,
+      canMerge: summary.state === 'open' && !summary.draft && canPush,
+      headSha: pull.head.sha,
+    };
+  }
+
+  async mergeChangeRequest(project: ProjectRef, id: string, headSha: string) {
+    try {
+      await mergePull(project.key, id, headSha);
+    } catch (error) {
+      throw toMergeError(error, { 401: TOKEN_CANNOT_MERGE, 403: TOKEN_CANNOT_MERGE, 409: BRANCH_CHANGED });
+    }
+  }
+
+  async listChangeRequestComments(project: ProjectRef, id: string) {
+    const [conversation, inline] = await fetchPullComments(project.key, id);
+    return [...conversation, ...inline]
+      .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+      .map((comment) => ({
+        id: `${comment.path ? 'review' : 'issue'}-${comment.id}`,
+        author: comment.user?.login ?? 'ghost',
+        authorAvatar: comment.user?.avatar_url ?? null,
+        body: comment.body,
+        createdAt: comment.created_at,
+        location: comment.path ?? null,
+      }));
   }
 
   async cancelRun(project: ProjectRef, runId: string) {

@@ -46,7 +46,10 @@ export function JobLogScreen({ navigation, route }: Props) {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   const loadJob = useCallback(() => provider.getJob(project, jobId), [provider, project, jobId]);
-  const job = useAsync(loadJob);
+  const job = useAsync(['job', project.key, jobId], loadJob, {
+    staleTimeMs: 0,
+    refetchIntervalMs: (data) => (isJobActive(data?.status ?? initialStatus) ? POLL_INTERVAL_MS : false),
+  });
   const log = useJobLog(project, jobId);
   const scroll = useAutoScroll();
 
@@ -55,7 +58,6 @@ export function JobLogScreen({ navigation, route }: Props) {
   const now = useNow(live);
   usePoll(
     () => {
-      job.poll();
       if (provider.capabilities.liveLogs) log.poll();
     },
     POLL_INTERVAL_MS,
@@ -124,17 +126,8 @@ export function JobLogScreen({ navigation, route }: Props) {
       title={jobName}
       monoTitle
       onBack={navigation.goBack}
-      subtitle={
-        <View style={tw`mt-1 flex-row items-center gap-2`}>
-          <StatusBadge status={status} />
-          <AppText variant="caption" mono tone="muted" style={tw`text-xs`}>
-            {job.data ? formatJobDuration(job.data, now) : ''}
-          </AppText>
-        </View>
-      }
       headerRight={
         <>
-          {live && provider.capabilities.liveLogs && <LiveBadge />}
           {!provider.capabilities.liveLogs && <IconButton icon="refresh" label="Refresh log" onPress={log.reload} />}
           <IconButton
             icon="info"
@@ -158,6 +151,13 @@ export function JobLogScreen({ navigation, route }: Props) {
         </>
       }
     >
+      <View style={tw`flex-row items-center gap-2 border-b border-line px-4 py-2`}>
+        <StatusBadge status={status} />
+        {live && provider.capabilities.liveLogs && <LiveBadge />}
+        <AppText variant="caption" mono tone="muted" style={tw`text-xs`}>
+          {job.data ? formatJobDuration(job.data, now) : ''}
+        </AppText>
+      </View>
       {detailsOpen && job.data && (
         <View style={tw`border-b border-line px-4 py-3`}>
           <DetailsCard

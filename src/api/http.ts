@@ -10,7 +10,7 @@ export function buildQuery(params: Record<string, string | number | undefined>) 
 }
 
 export type HttpRequest = {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PUT';
   headers?: Record<string, string>;
   body?: unknown;
 };
@@ -44,6 +44,18 @@ function readErrorMessage(text: string, fallback: string) {
   return text || fallback;
 }
 
+function describeRateLimit(headers: Headers) {
+  const retryAfter = Number(headers.get('retry-after'));
+  const reset = Number(headers.get('x-ratelimit-reset') ?? headers.get('ratelimit-reset'));
+  const resetAt = retryAfter > 0 ? Date.now() + retryAfter * 1000 : reset > 0 ? reset * 1000 : null;
+  const when = resetAt ? ` Try again at ${new Date(resetAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.` : '';
+  return `Rate limit reached.${when}`;
+}
+
+function isRateLimited(response: Response) {
+  return response.status === 429 || (response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0');
+}
+
 export async function httpRequest(url: string, { method = 'GET', headers, body }: HttpRequest = {}): Promise<HttpResponse> {
   const response = await fetchWithTimeout(url, {
     method,
@@ -52,6 +64,7 @@ export async function httpRequest(url: string, { method = 'GET', headers, body }
   });
   const text = await response.text();
   if (!response.ok) {
+    if (isRateLimited(response)) throw new ApiError('http', 429, describeRateLimit(response.headers));
     throw new ApiError('http', response.status, readErrorMessage(text, response.statusText));
   }
   return { text, headers: response.headers, status: response.status };

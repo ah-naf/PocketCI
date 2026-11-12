@@ -74,12 +74,51 @@ export type Credentials = { baseUrl: string; token: string };
 
 export type Account = { username: string; name: string | null; avatarUrl: string | null };
 
+export type ChangeRequestState = 'open' | 'merged' | 'closed';
+
+// 'closed' means closed without merging
+export type ChangeRequestFilter = 'open' | 'merged' | 'closed' | 'all';
+
+export type ChangeRequestSummary = {
+  id: string;
+  title: string;
+  author: string;
+  authorAvatar: string | null;
+  sourceBranch: string;
+  targetBranch: string;
+  state: ChangeRequestState;
+  draft: boolean;
+  updatedAt: string;
+};
+
+export type Approval = { approved: boolean; approvedBy: string[]; changesRequestedBy: string[] };
+
+export type ChangeRequest = ChangeRequestSummary & {
+  description: string;
+  webUrl: string;
+  approval: Approval;
+  blockedReason: string | null;
+  canMerge: boolean;
+  headSha: string;
+};
+
+export type ChangeRequestComment = {
+  id: string;
+  author: string;
+  authorAvatar: string | null;
+  body: string;
+  createdAt: string;
+  location: string | null;
+};
+
 export type ProviderLabels = {
   projects: string;
   project: string;
   run: string;
   runs: string;
   target: string;
+  changeRequest: string;
+  changeRequests: string;
 };
 
 export type ProviderCapabilities = { cancelJob: boolean; liveLogs: boolean; forceCancelRun: boolean; playJob: boolean; runVariables: boolean };

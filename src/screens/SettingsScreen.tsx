@@ -6,10 +6,19 @@ import { Button } from '../components/Button';
 import { ConnectionForm } from '../components/ConnectionForm';
 import { ConnectionStatusBanner } from '../components/ConnectionStatusBanner';
 import { Screen } from '../components/Screen';
+import { Stepper } from '../components/Stepper';
 import { useConnection } from '../hooks/useConnection';
+import { useFollowSettings } from '../hooks/useFollowSettings';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
+import { queryClient } from '../providers/QueryProvider';
 import { clearRecentProjects } from '../storage/recentProjects';
+import {
+  DEFAULT_FOLLOW_SETTINGS,
+  MAX_POLL_SECONDS,
+  MAX_RUNS_PER_PROJECT,
+  MIN_POLL_SECONDS,
+} from '../storage/followSettings';
 import { deleteToken } from '../storage/secure';
 import { useTheme } from '../theme';
 
@@ -19,6 +28,7 @@ export function SettingsScreen({ navigation }: Props) {
   const { tw } = useTheme();
   const provider = useProvider();
   const connection = useConnection();
+  const follow = useFollowSettings();
 
   function confirmRemoveToken() {
     Alert.alert(`Remove ${provider.displayName} token?`, 'The token is deleted from this device. Recent projects stay.', [
@@ -28,6 +38,7 @@ export function SettingsScreen({ navigation }: Props) {
         style: 'destructive',
         onPress: async () => {
           await deleteToken(provider.id);
+          queryClient.clear();
           await clearRecentProjects(provider.id);
           navigation.reset({ index: 0, routes: [{ name: 'Setup' }] });
         },
@@ -89,6 +100,28 @@ export function SettingsScreen({ navigation }: Props) {
             />
           </View>
           <ConnectionStatusBanner status={connection.status} />
+          <AppText variant="label" style={tw`pt-2`}>
+            Following
+          </AppText>
+          <Stepper
+            label="Runs per project"
+            value={follow.settings.runsPerProject}
+            min={1}
+            max={MAX_RUNS_PER_PROJECT}
+            note={`Shows up to ${MAX_RUNS_PER_PROJECT} recent runs per followed project. This adds no requests, it only makes the list longer.`}
+            onChange={(runsPerProject) => follow.update({ runsPerProject })}
+          />
+          <Stepper
+            label="Refresh while running"
+            value={follow.settings.pollSeconds}
+            unit="s"
+            min={MIN_POLL_SECONDS}
+            max={MAX_POLL_SECONDS}
+            step={5}
+            warn={follow.settings.pollSeconds < DEFAULT_FOLLOW_SETTINGS.pollSeconds}
+            note={`Minimum ${MIN_POLL_SECONDS} seconds. Shorter times use more of your API rate limit. Projects with no active run refresh 6 times slower, at least every minute.`}
+            onChange={(pollSeconds) => follow.update({ pollSeconds })}
+          />
         </View>
         <View style={tw`mt-auto gap-2.5 border-t border-line px-4 pb-8 pt-4`}>
           <AppText variant="label">Danger zone</AppText>

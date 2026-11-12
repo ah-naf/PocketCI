@@ -1,22 +1,24 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { AppText } from '../components/AppText';
-import { Icon } from '../components/Icon';
 import { IconButton } from '../components/IconButton';
 import { ListRow } from '../components/ListRow';
+import { ProviderPill } from '../components/ProviderPill';
 import { ProviderSwitchSheet } from '../components/ProviderSwitchSheet';
 import { Screen } from '../components/Screen';
 import { SearchList } from '../components/SearchList';
 import { SectionHeader } from '../components/SectionHeader';
 import { useFavoriteProjects } from '../hooks/useFavoriteProjects';
-import { useProviderHost } from '../hooks/useProviderHost';
+import { useFavoriteRuns } from '../hooks/useFavoriteRuns';
 import { useRecentProjects } from '../hooks/useRecentProjects';
 import { useSearchPage } from '../hooks/useSearchPage';
 import { useThemeToggle } from '../hooks/useThemeToggle';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider, useProviderSwitch } from '../providers/ProviderContext';
 import type { ProjectRef, ProviderId } from '../providers/types';
+import { MAX_FOLLOWED_PROJECTS } from '../storage/favoriteProjects';
+import { tapHaptic } from '../utils/haptics';
 import { rememberProject } from '../storage/recentProjects';
 import { useTheme } from '../theme';
 
@@ -29,9 +31,9 @@ export function ProjectsScreen({ navigation }: Props) {
   const provider = useProvider();
   const { providers, switchTo } = useProviderSwitch();
   const plural = provider.labels.projects.toLowerCase();
-  const host = useProviderHost();
   const recent = useRecentProjects(provider.id);
   const { favorites, toggle: toggleFavorite } = useFavoriteProjects(provider.id);
+  const { activeCount } = useFavoriteRuns(favorites);
   const themeToggle = useThemeToggle();
   const [switchOpen, setSwitchOpen] = useState(false);
 
@@ -39,7 +41,7 @@ export function ProjectsScreen({ navigation }: Props) {
     (query: string, page: number) => provider.listProjects(query, page),
     [provider],
   );
-  const { search, setSearch, items, busy, error, refresh, loadMore } = useSearchPage(fetchWithQuery);
+  const { search, setSearch, items, busy, error, refresh, loadMore } = useSearchPage(['projects'], fetchWithQuery);
 
   async function selectProvider(id: ProviderId) {
     setSwitchOpen(false);
@@ -54,6 +56,13 @@ export function ProjectsScreen({ navigation }: Props) {
     navigation.navigate('Branches', { project });
   }
 
+  async function followProject(project: ProjectRef) {
+    tapHaptic();
+    if (!(await toggleFavorite(project))) {
+      Alert.alert('Follow limit reached', `You can follow up to ${MAX_FOLLOWED_PROJECTS} projects. Unfollow one first.`);
+    }
+  }
+
   const renderProject = (project: ProjectRef) => (
     <ListRow
       key={project.key}
@@ -62,7 +71,7 @@ export function ProjectsScreen({ navigation }: Props) {
       tag={project.key === project.path ? undefined : project.key}
       onPress={() => openProject(project)}
       favorite={favorites.some(({ key }) => key === project.key)}
-      onToggleFavorite={() => toggleFavorite(project)}
+      onToggleFavorite={() => followProject(project)}
     />
   );
 
@@ -71,26 +80,20 @@ export function ProjectsScreen({ navigation }: Props) {
   return (
     <Screen>
       <View style={tw`min-h-14 flex-row items-center gap-2 border-b border-line pl-4 pr-1`}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Switch provider"
-          onPress={() => setSwitchOpen(true)}
-          style={tw`h-9 flex-row items-center gap-1.5 rounded-full border border-line px-3`}
-        >
-          <AppText variant="small" tone="accent" style={tw`font-sans-semibold`}>
-            {provider.displayName}
-          </AppText>
-          <Icon name="chevronDown" color="accent" size={16} />
-        </Pressable>
-        <AppText variant="small" mono numberOfLines={1} style={tw`flex-1 text-xs`}>
-          {host}
-        </AppText>
+        <ProviderPill providerId={provider.id} label={provider.displayName} onPress={() => setSwitchOpen(true)} />
+        <View style={tw`flex-1`} />
         <IconButton
           icon={themeToggle.nextScheme === 'light' ? 'sun' : 'moon'}
           label={`Switch to ${themeToggle.nextScheme} theme`}
           onPress={themeToggle.toggle}
         />
-        <IconButton icon="star" label="Favorites dashboard" onPress={() => navigation.navigate('Dashboard')} />
+        <IconButton
+          icon="pulse"
+          label={activeCount > 0 ? `Following, ${activeCount} running` : 'Following'}
+          pulsing={activeCount > 0}
+          count={activeCount}
+          onPress={() => navigation.navigate('Dashboard')}
+        />
         <IconButton icon="sliders" label="Settings" onPress={() => navigation.navigate('Settings')} />
       </View>
       <View style={tw`border-b border-line px-4 pb-3.5 pt-6`}>

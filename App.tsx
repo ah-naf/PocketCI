@@ -10,6 +10,7 @@ import { Appearance } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ProviderRoot, useProvider } from './src/providers/ProviderContext';
+import { QueryProvider } from './src/providers/QueryProvider';
 import { loadCredentials } from './src/storage/secure';
 import { loadThemePreference } from './src/storage/themePreference';
 
@@ -29,7 +30,7 @@ function AppContent() {
 
   return (
     <>
-      <RootNavigator initialRouteName={hasToken ? 'Projects' : 'Setup'} />
+      <RootNavigator initialRouteName={hasToken ? 'Projects' : 'Welcome'} />
       <StatusBar style="auto" />
     </>
   );
@@ -56,9 +57,11 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <ProviderRoot>
-        <AppContent />
-      </ProviderRoot>
+      <QueryProvider>
+        <ProviderRoot>
+          <AppContent />
+        </ProviderRoot>
+      </QueryProvider>
     </SafeAreaProvider>
   );
 }

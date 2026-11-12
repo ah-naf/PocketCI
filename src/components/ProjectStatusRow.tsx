@@ -3,16 +3,16 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { StatusBadge } from './StatusBadge';
 
-type Props = { name: string; detail: string; status: string | null; fallback: string; ago: string; onPress: () => void };
+type Props = { name: string; detail: string; status: string | null; fallback: string; ago: string; nested?: boolean; onPress: () => void };
 
-export function ProjectStatusRow({ name, detail, status, fallback, ago, onPress }: Props) {
+export function ProjectStatusRow({ name, detail, status, fallback, ago, nested, onPress }: Props) {
   const { tw, colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
       android_ripple={{ color: colors.raised }}
-      style={tw`min-h-16 flex-row items-center gap-3 border-b border-line px-4`}
+      style={tw.style('flex-row items-center gap-3 border-b border-line px-4', nested ? 'min-h-12 bg-card pl-8' : 'min-h-16')}
     >
       <View style={tw`w-24`}>
         {status ? (
@@ -24,7 +24,7 @@ export function ProjectStatusRow({ name, detail, status, fallback, ago, onPress 
         )}
       </View>
       <View style={tw`min-w-0 flex-1 gap-0.5`}>
-        <AppText variant="title" numberOfLines={1}>
+        <AppText variant={nested ? 'small' : 'title'} tone={nested ? 'fg' : undefined} numberOfLines={1}>
           {name}
         </AppText>
         <AppText variant="caption" mono tone="muted" numberOfLines={1} style={tw`text-[11px]`}>

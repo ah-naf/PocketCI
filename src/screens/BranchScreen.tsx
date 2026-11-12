@@ -1,4 +1,4 @@
-import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
@@ -20,7 +20,6 @@ import { VariableFields } from '../components/VariableFields';
 import { useAsync } from '../hooks/useAsync';
 import { usePaginated } from '../hooks/usePaginated';
 import { usePipelineForm } from '../hooks/usePipelineForm';
-import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
 import type { RunFilter } from '../providers/types';
@@ -50,13 +49,15 @@ export function BranchScreen({ navigation, route }: Props) {
     (page: number) => provider.listRuns(project, branch, runFilter, page),
     [provider, project, branch, runFilter],
   );
-  const options = useAsync(loadOptions);
-  const runs = usePaginated(fetchRunsPage);
-  const focused = useIsFocused();
+  const options = useAsync(['runOptions', project.key, branch], loadOptions, { staleTimeMs: 5 * 60_000 });
+  const runs = usePaginated(['runs', project.key, branch, runFilter], fetchRunsPage, {
+    staleTimeMs: 0,
+    refetchIntervalMs: (items) =>
+      startedNotice || items.some((item) => isPipelineActive(item.status)) ? RUNS_POLL_INTERVAL_MS : false,
+  });
   const hasActiveRun = runs.items.some((item) => isPipelineActive(item.status));
   const filterLabel = RUN_FILTERS.find((option) => option.id === runFilter)?.label.toLowerCase();
 
-  usePoll(runs.poll, RUNS_POLL_INTERVAL_MS, focused && (hasActiveRun || startedNotice));
   useFocusEffect(
     useCallback(() => {
       runs.poll();

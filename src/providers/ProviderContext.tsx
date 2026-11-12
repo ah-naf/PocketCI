@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { loadActiveProvider, saveActiveProvider } from '../storage/activeProvider';
 import { loadCredentials } from '../storage/secure';
 import type { CiProvider } from './CiProvider';
+import { queryClient } from './QueryProvider';
 import { GithubProvider } from './GithubProvider';
 import { GitlabProvider } from './GitlabProvider';
 import type { ProviderId } from './types';
@@ -28,6 +29,7 @@ export function ProviderRoot({ children }: { children: ReactNode }) {
 
   const switchTo = useCallback(async (id: ProviderId) => {
     await saveActiveProvider(id);
+    queryClient.clear();
     setActive(id);
     const { token } = await loadCredentials(id, providers[id].setup.defaultBaseUrl);
     return token !== '';

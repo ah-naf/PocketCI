@@ -2,16 +2,19 @@ import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BranchScreen } from '../screens/BranchScreen';
 import { BranchesScreen } from '../screens/BranchesScreen';
+import { ChangeRequestScreen } from '../screens/ChangeRequestScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { JobLogScreen } from '../screens/JobLogScreen';
 import { PipelineScreen } from '../screens/PipelineScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { SetupScreen } from '../screens/SetupScreen';
+import { WelcomeScreen } from '../screens/WelcomeScreen';
 import type { ProjectRef, RunStatus } from '../providers/types';
 import { useTheme } from '../theme';
 
 export type RootStackParamList = {
+  Welcome: undefined;
   Setup: undefined;
   Projects: undefined;
   Dashboard: undefined;
@@ -19,6 +22,7 @@ export type RootStackParamList = {
   Branches: { project: ProjectRef };
   Branch: { project: ProjectRef; branch: string };
   Pipeline: { project: ProjectRef; runId: string };
+  ChangeRequest: { project: ProjectRef; requestId: string };
   JobLog: { project: ProjectRef; jobId: string; jobName: string; status: RunStatus };
 };
 
@@ -42,6 +46,7 @@ export function RootNavigator({ initialRouteName }: { initialRouteName: keyof Ro
   return (
     <NavigationContainer theme={theme}>
       <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Setup" component={SetupScreen} />
         <Stack.Screen name="Projects" component={ProjectsScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
@@ -49,6 +54,7 @@ export function RootNavigator({ initialRouteName }: { initialRouteName: keyof Ro
         <Stack.Screen name="Branches" component={BranchesScreen} />
         <Stack.Screen name="Branch" component={BranchScreen} />
         <Stack.Screen name="Pipeline" component={PipelineScreen} />
+        <Stack.Screen name="ChangeRequest" component={ChangeRequestScreen} />
         <Stack.Screen name="JobLog" component={JobLogScreen} />
       </Stack.Navigator>
     </NavigationContainer>

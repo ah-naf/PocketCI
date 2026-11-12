@@ -13,7 +13,11 @@ export function useFavoriteProjects(providerId: ProviderId) {
     }, [providerId]),
   );
 
-  const toggle = useCallback(async (project: ProjectRef) => setFavorites(await toggleFavoriteProject(project)), []);
+  const toggle = useCallback(async (project: ProjectRef) => {
+    const next = await toggleFavoriteProject(project);
+    if (next) setFavorites(next);
+    return next !== null;
+  }, []);
 
   return { favorites, toggle };
 }

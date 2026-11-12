@@ -12,6 +12,10 @@ Features:
 - Pipeline form from the branch's CI variables, and trigger
 - Live pipeline status with jobs grouped by stage
 - Job logs with live follow, copy, and a last-2000-lines view
+- Open merge requests (GitLab) and pull requests (GitHub): description, comments, and approval state
+- Merge a merge request or pull request from its screen when your token's user is allowed to. It merges the commit you saw, so a push made after you opened the screen is rejected. Branch protection can still refuse a merge, and the provider's reason is shown
+- Responses are cached in memory to stay under API rate limits; pull to refresh always reloads
+- Follow up to 10 projects with the eye icon. The pulse icon in the header opens their latest runs and pulses while one is running; running projects are polled every 20 seconds and the rest every 2 minutes. In Settings you can show up to 5 runs per project and change the refresh time (minimum 10 seconds)
 
 ## Requirements
 
@@ -54,6 +58,10 @@ Both scripts use `--localhost`, so the phone connects over the USB cable. This m
 | `npm run typecheck` | Run `tsc --noEmit` |
 
 The release APK is signed with Expo's default debug key. That is fine for installing on your own phone.
+
+## Releasing
+
+Open a pull request from `origin` into `release` and write the release notes in its description. When the pull request is merged, the `Release APK` workflow builds the APK and sends it to Firebase App Distribution with that description as the release notes. A manual run, or a push with no pull request, uses `Build #<run number>` instead. Firebase shows the notes as plain text, so Markdown symbols appear as written.
 
 ## Providers and access tokens
 
