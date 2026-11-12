@@ -35,7 +35,7 @@ export function ProjectsScreen({ navigation }: Props) {
   const host = useProviderHost();
   const recent = useRecentProjects(provider.id);
   const { favorites, toggle: toggleFavorite } = useFavoriteProjects(provider.id);
-  const { anyActive } = useFavoriteRuns(favorites);
+  const { activeCount } = useFavoriteRuns(favorites);
   const themeToggle = useThemeToggle();
   const [switchOpen, setSwitchOpen] = useState(false);
 
@@ -93,9 +93,9 @@ export function ProjectsScreen({ navigation }: Props) {
         />
         <IconButton
           icon="pulse"
-          label={`Following ${favorites.length}${anyActive ? ', a run is active' : ''}`}
-          pulsing={anyActive}
-          count={favorites.length}
+          label={activeCount > 0 ? `Following, ${activeCount} running` : 'Following'}
+          pulsing={activeCount > 0}
+          count={activeCount}
           onPress={() => navigation.navigate('Dashboard')}
         />
         <IconButton icon="sliders" label="Settings" onPress={() => navigation.navigate('Settings')} />

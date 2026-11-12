@@ -13,7 +13,8 @@ const STALE_TIME_MS = 60_000;
 const IDLE_POLL_FACTOR = 6;
 const MIN_IDLE_POLL_MS = 60_000;
 
-const hasActiveRun = (runs: RunSummary[]) => runs.some((run) => isPipelineActive(run.status));
+const isActiveRun = (run: RunSummary) => isPipelineActive(run.status);
+const hasActiveRun = (runs: RunSummary[]) => runs.some(isActiveRun);
 const rankOf = ({ runs }: FavoriteRun) => (runs[0]?.status === 'failed' ? 0 : hasActiveRun(runs) ? 1 : 2);
 
 // One request returns the project's latest page of runs, so showing more runs per project costs nothing extra.
@@ -62,6 +63,6 @@ export function useFavoriteRuns(favorites: ProjectRef[]) {
     }
   }
 
-  const anyActive = queries.some(({ data }) => data !== undefined && hasActiveRun(data));
-  return { rows, reload, refreshing, anyActive };
+  const activeCount = queries.reduce((total, { data }) => total + (data?.filter(isActiveRun).length ?? 0), 0);
+  return { rows, reload, refreshing, activeCount };
 }
