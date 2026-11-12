@@ -13,6 +13,7 @@ Features:
 - Live pipeline status with jobs grouped by stage
 - Job logs with live follow, copy, and a last-2000-lines view
 - Open merge requests (GitLab) and pull requests (GitHub): description, comments, and approval state
+- Responses are cached in memory to stay under API rate limits; pull to refresh always reloads
 
 ## Requirements
 

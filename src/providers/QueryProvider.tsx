@@ -3,7 +3,7 @@ import { useEffect, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 import { ApiError } from '../api/errors';
 
-const NO_RETRY_STATUSES = [401, 403, 404];
+const NO_RETRY_STATUSES = [401, 403, 404, 429];
 
 export const queryClient = new QueryClient({
   defaultOptions: {
