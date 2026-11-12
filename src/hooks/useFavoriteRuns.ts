@@ -9,11 +9,12 @@ import { isPipelineActive } from '../utils/status';
 export type FavoriteRun = { project: ProjectRef; run: RunSummary | null; unavailable: boolean; loading: boolean };
 
 const POLL_INTERVAL_MS = 20_000;
+const IDLE_POLL_INTERVAL_MS = 120_000;
 const STALE_TIME_MS = 60_000;
 
 const rankOf = ({ run }: FavoriteRun) => (run?.status === 'failed' ? 0 : run && isPipelineActive(run.status) ? 1 : 2);
 
-// Only projects whose latest run is active are polled, so idle projects cost no background requests.
+// Active projects poll fast; the rest poll slowly so a run started elsewhere still shows up.
 export function useFavoriteRuns(favorites: ProjectRef[]) {
   const provider = useProvider();
   const focused = useIsFocused();
@@ -28,7 +29,8 @@ export function useFavoriteRuns(favorites: ProjectRef[]) {
       refetchInterval: (query: { state: { data?: RunSummary | null; error: unknown } }) => {
         const rateLimited = query.state.error instanceof ApiError && query.state.error.status === 429;
         const run = query.state.data;
-        return !rateLimited && run && isPipelineActive(run.status) ? POLL_INTERVAL_MS : false;
+        if (rateLimited || run === undefined) return false;
+        return run && isPipelineActive(run.status) ? POLL_INTERVAL_MS : IDLE_POLL_INTERVAL_MS;
       },
     })),
   });
