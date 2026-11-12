@@ -1,13 +1,14 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
-import { Alert, Linking, View } from 'react-native';
+import { Linking, View } from 'react-native';
 import { AppRefreshControl } from '../components/AppRefreshControl';
 import { AppText } from '../components/AppText';
 import { Avatar } from '../components/Avatar';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { CommentCard } from '../components/CommentCard';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorView } from '../components/ErrorView';
 import { LoadingRow } from '../components/LoadingRow';
 import { Markdown } from '../components/Markdown';
@@ -42,15 +43,8 @@ export function ChangeRequestScreen({ navigation, route }: Props) {
   const review = data && approvalBadge(data.approval);
   const queryClient = useQueryClient();
   const [merging, setMerging] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeNotice, setMergeNotice] = useState<{ variant: 'success' | 'failed'; text: string }>();
-
-  function confirmMerge() {
-    if (!data) return;
-    Alert.alert(`Merge #${requestId}?`, `${data.title}\n${data.sourceBranch} into ${data.targetBranch}`, [
-      { text: 'Not now', style: 'cancel' },
-      { text: 'Merge', onPress: () => merge(data.headSha) },
-    ]);
-  }
 
   async function merge(headSha: string) {
     tapHaptic();
@@ -65,6 +59,7 @@ export function ChangeRequestScreen({ navigation, route }: Props) {
       setMergeNotice({ variant: 'failed', text: describeError(error, provider.displayName).message });
     } finally {
       setMerging(false);
+      setMergeOpen(false);
       queryClient.invalidateQueries({ queryKey: [provider.id, 'changeRequests', project.key] });
       request.reload();
       comments.reload();
@@ -147,11 +142,41 @@ export function ChangeRequestScreen({ navigation, route }: Props) {
               label="Merge"
               loading={merging}
               disabled={data.blockedReason !== null}
-              onPress={confirmMerge}
+              onPress={() => setMergeOpen(true)}
             />
           )}
           <Button variant="ghost" label={`Open in ${provider.displayName}`} onPress={() => Linking.openURL(data.webUrl)} />
         </View>
+      )}
+      {data && (
+        <ConfirmDialog
+          visible={mergeOpen}
+          title={`Merge #${requestId}?`}
+          message={`This merges into ${data.targetBranch} on ${provider.displayName}. It can't be undone from the app.`}
+          confirmLabel="Merge"
+          submitting={merging}
+          onConfirm={() => merge(data.headSha)}
+          onCancel={() => !merging && setMergeOpen(false)}
+        >
+          <View style={tw`gap-2.5`}>
+            <View>
+              <AppText variant="label">Title</AppText>
+              <AppText style={tw`text-sm`}>{data.title}</AppText>
+            </View>
+            <View>
+              <AppText variant="label">Branch</AppText>
+              <AppText mono style={tw`text-sm`}>
+                {data.sourceBranch} into {data.targetBranch}
+              </AppText>
+            </View>
+            <View>
+              <AppText variant="label">Commit</AppText>
+              <AppText mono style={tw`text-sm`}>
+                {data.headSha.slice(0, 8)}
+              </AppText>
+            </View>
+          </View>
+        </ConfirmDialog>
       )}
     </Screen>
   );
