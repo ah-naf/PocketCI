@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Avatar } from './Avatar';
+import { Markdown } from './Markdown';
 
 type Props = { author: string; authorAvatar: string | null; ago: string; body: string; location: string | null };
 
@@ -21,9 +22,7 @@ export function CommentCard({ author, authorAvatar, ago, body, location }: Props
           {location}
         </AppText>
       )}
-      <AppText selectable style={tw`text-[14px] leading-[21px]`}>
-        {body}
-      </AppText>
+      <Markdown fontSize={14}>{body}</Markdown>
     </View>
   );
 }

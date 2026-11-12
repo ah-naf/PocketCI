@@ -22,7 +22,7 @@ Every ticket and every code change follows these rules.
 
 ## Dependencies
 - Keep the app small. Add a package only when a small helper cannot do the job, and say why in the ticket.
-- Allowed set: `expo`, `react-native`, React Navigation (native-stack), AsyncStorage, `expo-secure-store`, `expo-clipboard`, `yaml`, `twrnc`, `@tanstack/react-query` (request cache, dedupe, polling).
+- Allowed set: `expo`, `react-native`, React Navigation (native-stack), AsyncStorage, `expo-secure-store`, `expo-clipboard`, `yaml`, `twrnc`, `@tanstack/react-query` (request cache, dedupe, polling), `react-native-markdown-display` (descriptions and comments).
 
 ## Structure
 - `src/api`: GitLab calls only. All HTTP goes through `gitlabClient.ts`.
