@@ -98,6 +98,8 @@ export type ChangeRequest = ChangeRequestSummary & {
   webUrl: string;
   approval: Approval;
   blockedReason: string | null;
+  canMerge: boolean;
+  headSha: string;
 };
 
 export type ChangeRequestComment = {
