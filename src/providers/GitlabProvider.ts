@@ -1,3 +1,10 @@
+import {
+  fetchMergeRequest,
+  fetchMergeRequestApprovals,
+  fetchMergeRequestNotes,
+  fetchMergeRequests,
+  type MergeRequestSummary,
+} from '../api/changeRequests';
 import { fetchCiVariables } from '../api/ciVariables';
 import {
   cancelJob,
@@ -21,7 +28,18 @@ import { DEFAULT_BASE_URL, loadCredentials } from '../storage/secure';
 import { zipFileName } from '../utils/shareArtifact';
 import { parseLog } from '../utils/log';
 import { CiProvider } from './CiProvider';
-import type { Artifact, Job, Notice, ProjectRef, Run, RunFilter, RunOptions, StartRunRequest } from './types';
+import type {
+  Artifact,
+  ChangeRequestState,
+  ChangeRequestSummary,
+  Job,
+  Notice,
+  ProjectRef,
+  Run,
+  RunFilter,
+  RunOptions,
+  StartRunRequest,
+} from './types';
 
 const GITLAB_STATUS: Record<RunFilter, string | undefined> = {
   all: undefined,
@@ -66,6 +84,35 @@ const toJob = (job: GitlabJob): Job => ({
   webUrl: job.web_url,
 });
 
+const MERGE_REQUEST_STATE: Record<string, ChangeRequestState> = { opened: 'open', merged: 'merged', closed: 'closed' };
+
+const toChangeRequestSummary = (mergeRequest: MergeRequestSummary): ChangeRequestSummary => ({
+  id: String(mergeRequest.iid),
+  title: mergeRequest.title,
+  author: mergeRequest.author.name || mergeRequest.author.username,
+  authorAvatar: mergeRequest.author.avatar_url ?? null,
+  sourceBranch: mergeRequest.source_branch,
+  targetBranch: mergeRequest.target_branch,
+  state: MERGE_REQUEST_STATE[mergeRequest.state] ?? 'closed',
+  draft: mergeRequest.draft,
+  updatedAt: mergeRequest.updated_at,
+});
+
+const BLOCKED_REASON: Record<string, string> = {
+  conflict: 'Has conflicts',
+  not_approved: 'Needs approval',
+  ci_must_pass: 'Pipeline must pass',
+  draft_status: 'Marked as draft',
+  discussions_not_resolved: 'Unresolved discussions',
+};
+
+// Statuses that are not a block: the request can merge, or the state is already final.
+const NOT_BLOCKED = ['mergeable', 'not_open'];
+
+function blockedReason(status: string) {
+  return NOT_BLOCKED.includes(status) ? null : (BLOCKED_REASON[status] ?? status.replace(/_/g, ' '));
+}
+
 const FALLBACK_NOTICE: Notice = {
   kind: 'info',
   title: 'include: files not resolved',
@@ -82,6 +129,8 @@ export class GitlabProvider extends CiProvider {
     run: 'pipeline',
     runs: 'pipelines',
     target: 'pipeline',
+    changeRequest: 'Merge request',
+    changeRequests: 'Merge requests',
   };
   readonly capabilities = { cancelJob: true, liveLogs: true, forceCancelRun: false, playJob: true, runVariables: true };
   readonly setup = {
@@ -197,6 +246,44 @@ export class GitlabProvider extends CiProvider {
 
   cleanLog(raw: string) {
     return parseLog(raw);
+  }
+
+  async listChangeRequests(project: ProjectRef, page: number) {
+    const result = await fetchMergeRequests(Number(project.key), page);
+    return { ...result, items: result.items.map(toChangeRequestSummary) };
+  }
+
+  async getChangeRequest(project: ProjectRef, id: string) {
+    const projectId = Number(project.key);
+    const [mergeRequest, approvals] = await Promise.all([
+      fetchMergeRequest(projectId, Number(id)),
+      fetchMergeRequestApprovals(projectId, Number(id)),
+    ]);
+    return {
+      ...toChangeRequestSummary(mergeRequest),
+      description: mergeRequest.description ?? '',
+      webUrl: mergeRequest.web_url,
+      approval: {
+        approved: approvals.approved,
+        approvedBy: approvals.approved_by.map(({ user }) => user.name || user.username),
+        changesRequestedBy: [],
+      },
+      blockedReason: blockedReason(mergeRequest.detailed_merge_status),
+    };
+  }
+
+  async listChangeRequestComments(project: ProjectRef, id: string) {
+    const notes = await fetchMergeRequestNotes(Number(project.key), Number(id));
+    return notes
+      .filter((note) => !note.system)
+      .map((note) => ({
+        id: String(note.id),
+        author: note.author.name || note.author.username,
+        authorAvatar: note.author.avatar_url ?? null,
+        body: note.body,
+        createdAt: note.created_at,
+        location: note.position?.new_path ?? null,
+      }));
   }
 
   async cancelRun(project: ProjectRef, runId: string) {

@@ -160,3 +160,55 @@ export async function rerunJob(fullName: string, jobId: string) {
 export async function cancelWorkflowRun(fullName: string, runId: string) {
   await githubRequest(`/repos/${fullName}/actions/runs/${runId}/cancel`, { method: 'POST' });
 }
+
+type GithubUser = { login: string; avatar_url?: string | null };
+
+export type GithubPullSummary = {
+  number: number;
+  title: string;
+  user: GithubUser | null;
+  head: { ref: string };
+  base: { ref: string };
+  state: string;
+  merged_at: string | null;
+  draft?: boolean;
+  updated_at: string;
+};
+
+export type GithubPull = GithubPullSummary & {
+  body: string | null;
+  html_url: string;
+  mergeable: boolean | null;
+  mergeable_state: string;
+};
+
+export type GithubReview = { user: GithubUser | null; state: string };
+
+export type GithubComment = {
+  id: number;
+  user: GithubUser | null;
+  body: string;
+  created_at: string;
+  path?: string;
+};
+
+export function fetchPulls(fullName: string, page: number) {
+  const query = buildQuery({ state: 'open', sort: 'updated', direction: 'desc', per_page: 20, page });
+  return githubGetPage<GithubPullSummary>(`/repos/${fullName}/pulls${query}`);
+}
+
+export function fetchPull(fullName: string, number: string) {
+  return githubGetJson<GithubPull>(`/repos/${fullName}/pulls/${number}`);
+}
+
+export function fetchPullReviews(fullName: string, number: string) {
+  return githubGetJson<GithubReview[]>(`/repos/${fullName}/pulls/${number}/reviews${buildQuery({ per_page: 100 })}`);
+}
+
+export function fetchPullComments(fullName: string, number: string) {
+  const query = buildQuery({ per_page: 100 });
+  return Promise.all([
+    githubGetJson<GithubComment[]>(`/repos/${fullName}/issues/${number}/comments${query}`),
+    githubGetJson<GithubComment[]>(`/repos/${fullName}/pulls/${number}/comments${query}`),
+  ]);
+}
