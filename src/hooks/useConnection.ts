@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { describeError, type FriendlyError } from '../api/errors';
 import { useProvider } from '../providers/ProviderContext';
+import { queryClient } from '../providers/QueryProvider';
 import type { Account } from '../providers/types';
 import { clearRecentProjects } from '../storage/recentProjects';
 import { loadCredentials, saveCredentials } from '../storage/secure';
@@ -51,6 +52,7 @@ export function useConnection() {
   async function save() {
     const previous = await loadCredentials(provider.id, defaultBaseUrl);
     await saveCredentials(provider.id, cleaned);
+    queryClient.clear();
     if (previous.token !== cleaned.token || previous.baseUrl !== cleaned.baseUrl) {
       await clearRecentProjects(provider.id);
     }
