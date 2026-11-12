@@ -59,6 +59,10 @@ Both scripts use `--localhost`, so the phone connects over the USB cable. This m
 
 The release APK is signed with Expo's default debug key. That is fine for installing on your own phone.
 
+## Releasing
+
+Open a pull request from `origin` into `release` and write the release notes in its description. When the pull request is merged, the `Release APK` workflow builds the APK and sends it to Firebase App Distribution with that description as the release notes. A manual run, or a push with no pull request, uses `Build #<run number>` instead. Firebase shows the notes as plain text, so Markdown symbols appear as written.
+
 ## Providers and access tokens
 
 The app is in one provider mode at a time. Switch with the provider button at the top left of the Projects screen. Each provider keeps its own token, and removing one never touches the other.
