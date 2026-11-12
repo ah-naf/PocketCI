@@ -71,7 +71,7 @@ export function ProjectsScreen({ navigation }: Props) {
   return (
     <Screen>
       <View style={tw`min-h-14 flex-row items-center gap-2 border-b border-line pl-4 pr-1`}>
-        <ProviderPill label={provider.displayName} onPress={() => setSwitchOpen(true)} />
+        <ProviderPill providerId={provider.id} label={provider.displayName} onPress={() => setSwitchOpen(true)} />
         <AppText variant="small" mono numberOfLines={1} style={tw`flex-1 text-xs`}>
           {host}
         </AppText>

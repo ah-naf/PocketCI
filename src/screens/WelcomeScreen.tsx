@@ -4,6 +4,7 @@ import { AppText } from '../components/AppText';
 import { Icon } from '../components/Icon';
 import { ListRow } from '../components/ListRow';
 import { Logo } from '../components/Logo';
+import { ProviderLogo } from '../components/ProviderLogo';
 import { Screen } from '../components/Screen';
 import { SectionHeader } from '../components/SectionHeader';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -60,7 +61,7 @@ export function WelcomeScreen({ navigation }: Props) {
       </View>
       <SectionHeader title="Choose your provider" bordered />
       {providers.map(({ id, displayName }) => (
-        <ListRow key={id} title={displayName} onPress={() => selectProvider(id)} />
+        <ListRow key={id} leading={<ProviderLogo id={id} size={22} />} title={displayName} onPress={() => selectProvider(id)} />
       ))}
       <View style={tw`mx-4 mt-6 flex-row gap-3 rounded-2xl border border-line bg-card p-4`}>
         <Icon name="info" color="accent" />

@@ -1,19 +1,22 @@
 import { Pressable } from 'react-native';
+import type { ProviderId } from '../providers/types';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
+import { ProviderLogo } from './ProviderLogo';
 
-type Props = { label: string; onPress: () => void };
+type Props = { providerId: ProviderId; label: string; onPress: () => void };
 
-export function ProviderPill({ label, onPress }: Props) {
+export function ProviderPill({ providerId, label, onPress }: Props) {
   const { tw } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Switch provider"
       onPress={onPress}
-      style={tw`h-9 flex-row items-center gap-1.5 rounded-full border border-line px-3`}
+      style={tw`h-9 flex-row items-center gap-2 rounded-full border border-line pl-2.5 pr-3`}
     >
+      <ProviderLogo id={providerId} size={16} />
       <AppText variant="small" tone="accent" style={tw`font-sans-semibold`}>
         {label}
       </AppText>
