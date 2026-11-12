@@ -61,10 +61,10 @@ export function ListRow({ leading, title, subtitle, tag, accentTag, monoTitle, o
       )}
       {onToggleFavorite && (
         <IconButton
-          icon="star"
-          filled={favorite}
+          icon="eye"
           color={favorite ? 'accent' : 'dim'}
-          label={favorite ? 'Remove from favorites' : 'Add to favorites'}
+          active={favorite}
+          label={favorite ? 'Unfollow' : 'Follow'}
           onPress={onToggleFavorite}
         />
       )}
