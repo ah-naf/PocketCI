@@ -2,6 +2,10 @@ import type {
   Account,
   Artifact,
   ArtifactDownload,
+  ChangeRequest,
+  ChangeRequestComment,
+  ChangeRequestFilter,
+  ChangeRequestSummary,
   Credentials,
   Job,
   LogChunk,
@@ -54,6 +58,14 @@ export abstract class CiProvider {
 
   abstract readLog(project: ProjectRef, jobId: string, cursor: string | null): Promise<LogChunk>;
   abstract cleanLog(raw: string): string[];
+
+  abstract listChangeRequests(
+    project: ProjectRef,
+    filter: ChangeRequestFilter,
+    page: number,
+  ): Promise<Page<ChangeRequestSummary>>;
+  abstract getChangeRequest(project: ProjectRef, id: string): Promise<ChangeRequest>;
+  abstract listChangeRequestComments(project: ProjectRef, id: string): Promise<ChangeRequestComment[]>;
 
   abstract cancelRun(project: ProjectRef, runId: string): Promise<void>;
 
