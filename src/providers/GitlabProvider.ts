@@ -30,6 +30,7 @@ import { parseLog } from '../utils/log';
 import { CiProvider } from './CiProvider';
 import type {
   Artifact,
+  ChangeRequestFilter,
   ChangeRequestState,
   ChangeRequestSummary,
   Job,
@@ -248,9 +249,11 @@ export class GitlabProvider extends CiProvider {
     return parseLog(raw);
   }
 
-  async listChangeRequests(project: ProjectRef, page: number) {
-    const result = await fetchMergeRequests(Number(project.key), page);
-    return { ...result, items: result.items.map(toChangeRequestSummary) };
+  async listChangeRequests(project: ProjectRef, filter: ChangeRequestFilter, page: number) {
+    const result = await fetchMergeRequests(Number(project.key), filter === 'open' ? 'opened' : 'all', page);
+    // shortcut: GitLab cannot filter "merged or closed" in one call, so open ones are dropped after the fetch and a page can come back short, switch to two calls if that hurts.
+    const items = filter === 'closed' ? result.items.filter((item) => item.state !== 'opened') : result.items;
+    return { ...result, items: items.map(toChangeRequestSummary) };
   }
 
   async getChangeRequest(project: ProjectRef, id: string) {

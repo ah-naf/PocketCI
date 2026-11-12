@@ -30,8 +30,8 @@ export type MergeRequestNote = {
   position?: { new_path?: string | null } | null;
 };
 
-export function fetchMergeRequests(projectId: number, page: number) {
-  const query = buildQuery({ state: 'opened', order_by: 'updated_at', sort: 'desc', per_page: 20, page });
+export function fetchMergeRequests(projectId: number, state: 'opened' | 'all', page: number) {
+  const query = buildQuery({ state, order_by: 'updated_at', sort: 'desc', per_page: 20, page });
   return getPage<MergeRequestSummary>(`/projects/${projectId}/merge_requests${query}`);
 }
 

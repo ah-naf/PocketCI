@@ -1,8 +1,11 @@
 import { Pressable, View } from 'react-native';
+import type { ChangeRequestState } from '../providers/types';
 import { useTheme } from '../theme';
+import { stateBadge } from '../utils/changeRequestStatus';
 import { AppText } from './AppText';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';
+import { StatusBadge } from './StatusBadge';
 
 type Props = {
   id: string;
@@ -11,13 +14,15 @@ type Props = {
   authorAvatar: string | null;
   sourceBranch: string;
   targetBranch: string;
+  state: ChangeRequestState;
   draft: boolean;
   ago: string;
   onPress: () => void;
 };
 
-export function ChangeRequestRow({ id, title, author, authorAvatar, sourceBranch, targetBranch, draft, ago, onPress }: Props) {
+export function ChangeRequestRow({ id, title, author, authorAvatar, sourceBranch, targetBranch, state, draft, ago, onPress }: Props) {
   const { tw, colors } = useTheme();
+  const badge = stateBadge(state, draft);
   return (
     <Pressable
       accessibilityRole="button"
@@ -37,13 +42,7 @@ export function ChangeRequestRow({ id, title, author, authorAvatar, sourceBranch
           #{id} by {author}, {ago}
         </AppText>
       </View>
-      {draft && (
-        <View style={tw`h-[22px] justify-center rounded-md border border-line px-1.5`}>
-          <AppText variant="caption" mono tone="muted" style={tw`text-[11px]`}>
-            draft
-          </AppText>
-        </View>
-      )}
+      {badge.label !== 'Open' && <StatusBadge status={badge.status} label={badge.label} />}
       <Icon name="chevronRight" color="dim" size={18} />
     </Pressable>
   );

@@ -192,8 +192,8 @@ export type GithubComment = {
   path?: string;
 };
 
-export function fetchPulls(fullName: string, page: number) {
-  const query = buildQuery({ state: 'open', sort: 'updated', direction: 'desc', per_page: 20, page });
+export function fetchPulls(fullName: string, state: 'open' | 'closed' | 'all', page: number) {
+  const query = buildQuery({ state, sort: 'updated', direction: 'desc', per_page: 20, page });
   return githubGetPage<GithubPullSummary>(`/repos/${fullName}/pulls${query}`);
 }
 

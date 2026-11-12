@@ -1,6 +1,12 @@
-import type { Approval, ChangeRequestState } from '../providers/types';
+import type { Approval, ChangeRequestFilter, ChangeRequestState } from '../providers/types';
 
 type Badge = { status: string; label: string };
+
+export const CHANGE_REQUEST_FILTERS: { id: ChangeRequestFilter; label: string }[] = [
+  { id: 'open', label: 'Open' },
+  { id: 'closed', label: 'Closed' },
+  { id: 'all', label: 'All' },
+];
 
 export function stateBadge(state: ChangeRequestState, draft: boolean): Badge {
   if (state === 'merged') return { status: 'success', label: 'Merged' };

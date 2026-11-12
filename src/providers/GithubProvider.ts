@@ -36,6 +36,7 @@ import { CiProvider } from './CiProvider';
 import type {
   Approval,
   Artifact,
+  ChangeRequestFilter,
   ChangeRequestSummary,
   Credentials,
   Job,
@@ -304,8 +305,8 @@ export class GithubProvider extends CiProvider {
     await rerunJob(project.key, jobId);
   }
 
-  async listChangeRequests(project: ProjectRef, page: number) {
-    const result = await fetchPulls(project.key, page);
+  async listChangeRequests(project: ProjectRef, filter: ChangeRequestFilter, page: number) {
+    const result = await fetchPulls(project.key, filter, page);
     return { ...result, items: result.items.map(toChangeRequestSummary) };
   }
 
