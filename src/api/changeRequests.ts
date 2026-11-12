@@ -1,4 +1,4 @@
-import { buildQuery, getJson, getPage } from './gitlabClient';
+import { buildQuery, getJson, getPage, gitlabRequest } from './gitlabClient';
 
 type GitlabUser = { name: string; username: string; avatar_url?: string | null };
 
@@ -17,6 +17,8 @@ export type MergeRequest = MergeRequestSummary & {
   description: string | null;
   web_url: string;
   detailed_merge_status: string;
+  sha: string;
+  user: { can_merge: boolean };
 };
 
 export type MergeRequestApprovals = { approved: boolean; approved_by: { user: GitlabUser }[] };
@@ -46,4 +48,8 @@ export function fetchMergeRequestApprovals(projectId: number, iid: number) {
 export function fetchMergeRequestNotes(projectId: number, iid: number) {
   const query = buildQuery({ sort: 'asc', per_page: 100 });
   return getJson<MergeRequestNote[]>(`/projects/${projectId}/merge_requests/${iid}/notes${query}`);
+}
+
+export async function mergeMergeRequest(projectId: number, iid: number, sha: string) {
+  await gitlabRequest(`/projects/${projectId}/merge_requests/${iid}/merge`, { method: 'PUT', body: { sha } });
 }

@@ -3,8 +3,10 @@ import {
   fetchMergeRequestApprovals,
   fetchMergeRequestNotes,
   fetchMergeRequests,
+  mergeMergeRequest,
   type MergeRequestSummary,
 } from '../api/changeRequests';
+import { BRANCH_CHANGED, TOKEN_CANNOT_MERGE, toMergeError } from '../api/mergeErrors';
 import { fetchCiVariables } from '../api/ciVariables';
 import {
   cancelJob,
@@ -270,7 +272,23 @@ export class GitlabProvider extends CiProvider {
         changesRequestedBy: [],
       },
       blockedReason: blockedReason(mergeRequest.detailed_merge_status),
+      canMerge: mergeRequest.user.can_merge && mergeRequest.state === 'opened',
+      headSha: mergeRequest.sha,
     };
+  }
+
+  async mergeChangeRequest(project: ProjectRef, id: string, headSha: string) {
+    try {
+      await mergeMergeRequest(Number(project.key), Number(id), headSha);
+    } catch (error) {
+      throw toMergeError(error, {
+        401: TOKEN_CANNOT_MERGE,
+        403: TOKEN_CANNOT_MERGE,
+        405: "This merge request can't be merged yet",
+        406: 'Has conflicts',
+        409: BRANCH_CHANGED,
+      });
+    }
   }
 
   async listChangeRequestComments(project: ProjectRef, id: string) {
