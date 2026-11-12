@@ -19,6 +19,7 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider, useProviderSwitch } from '../providers/ProviderContext';
 import type { ProjectRef, ProviderId } from '../providers/types';
 import { MAX_FOLLOWED_PROJECTS } from '../storage/favoriteProjects';
+import { tapHaptic } from '../utils/haptics';
 import { rememberProject } from '../storage/recentProjects';
 import { useTheme } from '../theme';
 
@@ -58,6 +59,7 @@ export function ProjectsScreen({ navigation }: Props) {
   }
 
   async function followProject(project: ProjectRef) {
+    tapHaptic();
     if (!(await toggleFavorite(project))) {
       Alert.alert('Follow limit reached', `You can follow up to ${MAX_FOLLOWED_PROJECTS} projects. Unfollow one first.`);
     }

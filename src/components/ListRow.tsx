@@ -63,6 +63,7 @@ export function ListRow({ leading, title, subtitle, tag, accentTag, monoTitle, o
         <IconButton
           icon="eye"
           color={favorite ? 'accent' : 'dim'}
+          active={favorite}
           label={favorite ? 'Unfollow' : 'Follow'}
           onPress={onToggleFavorite}
         />
