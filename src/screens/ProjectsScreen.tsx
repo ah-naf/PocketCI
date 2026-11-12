@@ -1,10 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { AppText } from '../components/AppText';
-import { Icon } from '../components/Icon';
 import { IconButton } from '../components/IconButton';
 import { ListRow } from '../components/ListRow';
+import { ProviderPill } from '../components/ProviderPill';
 import { ProviderSwitchSheet } from '../components/ProviderSwitchSheet';
 import { Screen } from '../components/Screen';
 import { SearchList } from '../components/SearchList';
@@ -71,17 +71,7 @@ export function ProjectsScreen({ navigation }: Props) {
   return (
     <Screen>
       <View style={tw`min-h-14 flex-row items-center gap-2 border-b border-line pl-4 pr-1`}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Switch provider"
-          onPress={() => setSwitchOpen(true)}
-          style={tw`h-9 flex-row items-center gap-1.5 rounded-full border border-line px-3`}
-        >
-          <AppText variant="small" tone="accent" style={tw`font-sans-semibold`}>
-            {provider.displayName}
-          </AppText>
-          <Icon name="chevronDown" color="accent" size={16} />
-        </Pressable>
+        <ProviderPill label={provider.displayName} onPress={() => setSwitchOpen(true)} />
         <AppText variant="small" mono numberOfLines={1} style={tw`flex-1 text-xs`}>
           {host}
         </AppText>
