@@ -250,10 +250,8 @@ export class GitlabProvider extends CiProvider {
   }
 
   async listChangeRequests(project: ProjectRef, filter: ChangeRequestFilter, page: number) {
-    const result = await fetchMergeRequests(Number(project.key), filter === 'open' ? 'opened' : 'all', page);
-    // shortcut: GitLab cannot filter "merged or closed" in one call, so open ones are dropped after the fetch and a page can come back short, switch to two calls if that hurts.
-    const items = filter === 'closed' ? result.items.filter((item) => item.state !== 'opened') : result.items;
-    return { ...result, items: items.map(toChangeRequestSummary) };
+    const result = await fetchMergeRequests(Number(project.key), filter === 'open' ? 'opened' : filter, page);
+    return { ...result, items: result.items.map(toChangeRequestSummary) };
   }
 
   async getChangeRequest(project: ProjectRef, id: string) {

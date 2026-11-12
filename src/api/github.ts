@@ -1,7 +1,7 @@
 import { ApiError } from './errors';
 import { buildQuery } from './http';
 import { githubGetJson, githubGetPage, githubRequest } from './githubClient';
-import type { Page } from '../providers/types';
+import type { ChangeRequestFilter, Page } from '../providers/types';
 
 export type GithubRepo = { name: string; full_name: string; default_branch: string };
 export type GithubBranch = { name: string };
@@ -192,9 +192,31 @@ export type GithubComment = {
   path?: string;
 };
 
-export function fetchPulls(fullName: string, state: 'open' | 'closed' | 'all', page: number) {
-  const query = buildQuery({ state, sort: 'updated', direction: 'desc', per_page: 20, page });
-  return githubGetPage<GithubPullSummary>(`/repos/${fullName}/pulls${query}`);
+const PULL_PAGE_SIZE = 20;
+const MAX_PULL_PAGES = 5;
+
+export async function fetchPulls(
+  fullName: string,
+  filter: ChangeRequestFilter,
+  page: number,
+): Promise<Page<GithubPullSummary>> {
+  const state = filter === 'open' || filter === 'all' ? filter : 'closed';
+  const load = (pageNumber: number) =>
+    githubGetPage<GithubPullSummary>(
+      `/repos/${fullName}/pulls${buildQuery({ state, sort: 'updated', direction: 'desc', per_page: PULL_PAGE_SIZE, page: pageNumber })}`,
+    );
+  if (filter !== 'merged' && filter !== 'closed') return load(page);
+
+  const wantMerged = filter === 'merged';
+  const items: GithubPullSummary[] = [];
+  let next: number | null = page;
+  // shortcut: GitHub cannot tell merged from closed-unmerged in a list call, so closed pages are scanned and split here, at most MAX_PULL_PAGES per load.
+  for (let loaded = 0; next !== null && items.length < PULL_PAGE_SIZE && loaded < MAX_PULL_PAGES; loaded += 1) {
+    const result: Page<GithubPullSummary> = await load(next);
+    items.push(...result.items.filter((pull) => (pull.merged_at !== null) === wantMerged));
+    next = result.nextPage;
+  }
+  return { items, nextPage: next };
 }
 
 export function fetchPull(fullName: string, number: string) {

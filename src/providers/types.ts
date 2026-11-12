@@ -76,8 +76,8 @@ export type Account = { username: string; name: string | null; avatarUrl: string
 
 export type ChangeRequestState = 'open' | 'merged' | 'closed';
 
-// 'closed' means merged or closed without merging
-export type ChangeRequestFilter = 'open' | 'closed' | 'all';
+// 'closed' means closed without merging
+export type ChangeRequestFilter = 'open' | 'merged' | 'closed' | 'all';
 
 export type ChangeRequestSummary = {
   id: string;

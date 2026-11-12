@@ -4,6 +4,7 @@ type Badge = { status: string; label: string };
 
 export const CHANGE_REQUEST_FILTERS: { id: ChangeRequestFilter; label: string }[] = [
   { id: 'open', label: 'Open' },
+  { id: 'merged', label: 'Merged' },
   { id: 'closed', label: 'Closed' },
   { id: 'all', label: 'All' },
 ];
