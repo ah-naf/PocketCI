@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { View } from 'react-native';
 import { AppRefreshControl } from '../components/AppRefreshControl';
 import { EmptyState } from '../components/EmptyState';
 import { ProjectStatusRow } from '../components/ProjectStatusRow';
@@ -16,8 +17,8 @@ export function DashboardScreen({ navigation }: Props) {
   const { favorites } = useFavoriteProjects(provider.id);
   const { rows, reload, refreshing } = useFavoriteRuns(favorites);
 
-  function openFavorite({ project, run }: FavoriteRun) {
-    if (run) navigation.navigate('Pipeline', { project, runId: run.id });
+  function openFavorite({ project, runs }: FavoriteRun) {
+    if (runs[0]) navigation.navigate('Pipeline', { project, runId: runs[0].id });
     else navigation.navigate('Branches', { project });
   }
 
@@ -35,15 +36,28 @@ export function DashboardScreen({ navigation }: Props) {
         />
       )}
       {rows.map((row) => (
-        <ProjectStatusRow
-          key={row.project.key}
-          name={row.project.name}
-          detail={row.run?.ref ?? row.project.path}
-          status={row.run?.status ?? null}
-          fallback={row.unavailable ? 'Unavailable' : row.loading ? 'Loading' : 'No runs'}
-          ago={row.run ? formatRelativeTime(row.run.createdAt) : ''}
-          onPress={() => openFavorite(row)}
-        />
+        <View key={row.project.key}>
+          <ProjectStatusRow
+            name={row.project.name}
+            detail={row.runs[0]?.ref ?? row.project.path}
+            status={row.runs[0]?.status ?? null}
+            fallback={row.unavailable ? 'Unavailable' : row.loading ? 'Loading' : 'No runs'}
+            ago={row.runs[0] ? formatRelativeTime(row.runs[0].createdAt) : ''}
+            onPress={() => openFavorite(row)}
+          />
+          {row.runs.slice(1).map((run) => (
+            <ProjectStatusRow
+              key={run.id}
+              nested
+              name={run.ref}
+              detail={`#${run.id}`}
+              status={run.status}
+              fallback=""
+              ago={formatRelativeTime(run.createdAt)}
+              onPress={() => navigation.navigate('Pipeline', { project: row.project, runId: run.id })}
+            />
+          ))}
+        </View>
       ))}
     </Screen>
   );
