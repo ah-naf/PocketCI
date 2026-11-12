@@ -93,8 +93,9 @@ export function ProjectsScreen({ navigation }: Props) {
         />
         <IconButton
           icon="pulse"
-          label={anyActive ? 'Followed projects, a run is active' : 'Followed projects'}
+          label={`Following ${favorites.length}${anyActive ? ', a run is active' : ''}`}
           pulsing={anyActive}
+          count={favorites.length}
           onPress={() => navigation.navigate('Dashboard')}
         />
         <IconButton icon="sliders" label="Settings" onPress={() => navigation.navigate('Settings')} />
