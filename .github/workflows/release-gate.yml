@@ -1,0 +1,18 @@
+name: Release gate
+on:
+  pull_request:
+    branches: [release]
+
+jobs:
+  only-from-origin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allow only the origin branch of this repository
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$HEAD_REF" != "origin" ] || [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::Pull requests into release must come from the origin branch, not $HEAD_REPO:$HEAD_REF"
+            exit 1
+          fi
