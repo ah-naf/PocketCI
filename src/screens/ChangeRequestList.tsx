@@ -21,7 +21,7 @@ export function ChangeRequestList({ project, onOpen }: Props) {
     (page: number) => provider.listChangeRequests(project, filter, page),
     [provider, project, filter],
   );
-  const requests = usePaginated(fetchPage);
+  const requests = usePaginated(['changeRequests', project.key, filter], fetchPage, { staleTimeMs: 30_000 });
   const noun = provider.labels.changeRequests;
 
   return (

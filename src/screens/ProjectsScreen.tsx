@@ -39,7 +39,7 @@ export function ProjectsScreen({ navigation }: Props) {
     (query: string, page: number) => provider.listProjects(query, page),
     [provider],
   );
-  const { search, setSearch, items, busy, error, refresh, loadMore } = useSearchPage(fetchWithQuery);
+  const { search, setSearch, items, busy, error, refresh, loadMore } = useSearchPage(['projects'], fetchWithQuery);
 
   async function selectProvider(id: ProviderId) {
     setSwitchOpen(false);

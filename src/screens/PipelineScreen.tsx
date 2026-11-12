@@ -1,4 +1,4 @@
-import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, View } from 'react-native';
@@ -17,7 +17,6 @@ import { VariableList } from '../components/VariableList';
 import { useArtifactDownload } from '../hooks/useArtifactDownload';
 import { useAsync } from '../hooks/useAsync';
 import { useNow } from '../hooks/useNow';
-import { usePoll } from '../hooks/usePoll';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
@@ -36,20 +35,24 @@ export function PipelineScreen({ navigation, route }: Props) {
   const { project, runId } = route.params;
   const { tw } = useTheme();
   const provider = useProvider();
-  const focused = useIsFocused();
 
   const loadRun = useCallback(() => provider.getRun(project, runId), [provider, project, runId]);
   const loadJobs = useCallback(() => provider.listJobs(project, runId), [provider, project, runId]);
-  const run = useAsync(loadRun);
-  const jobs = useAsync(loadJobs);
+  const [watching, setWatching] = useState(false);
+  const run = useAsync(['run', project.key, runId], loadRun, {
+    staleTimeMs: 0,
+    refetchIntervalMs: (data) => (!data || isPipelineActive(data.status) || watching ? POLL_INTERVAL_MS : false),
+  });
+  const jobs = useAsync(['jobs', project.key, runId], loadJobs, {
+    staleTimeMs: 0,
+    refetchIntervalMs: () => (!run.data || isPipelineActive(run.data.status) || watching ? POLL_INTERVAL_MS : false),
+  });
   const loadVariables = useCallback(() => provider.getRunVariables(project, runId), [provider, project, runId]);
-  const variables = useAsync(loadVariables);
+  const variables = useAsync(['runVariables', project.key, runId], loadVariables);
 
   const loadArtifacts = useCallback(() => provider.listArtifacts(project, runId), [provider, project, runId]);
-  const artifacts = useAsync(loadArtifacts);
+  const artifacts = useAsync(['artifacts', project.key, runId], loadArtifacts, { staleTimeMs: 0 });
   const artifactDownload = useArtifactDownload(project);
-
-  const [watching, setWatching] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -70,14 +73,6 @@ export function PipelineScreen({ navigation, route }: Props) {
   useEffect(() => {
     if (!active) artifacts.poll();
   }, [active, artifacts.poll]);
-  usePoll(
-    () => {
-      run.poll();
-      jobs.poll();
-    },
-    POLL_INTERVAL_MS,
-    (active || watching) && focused,
-  );
 
   const cancelRunningRun = () =>
     confirmCancel(provider.labels.run, provider.displayName, () => provider.cancelRun(project, runId), () => {

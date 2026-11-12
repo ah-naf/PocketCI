@@ -31,7 +31,7 @@ export function BranchesScreen({ navigation, route }: Props) {
     (query: string, page: number) => provider.listBranches(project, query, page),
     [provider, project],
   );
-  const { search, setSearch, query, items, busy, error, refresh, loadMore } = useSearchPage(fetchWithQuery);
+  const { search, setSearch, query, items, busy, error, refresh, loadMore } = useSearchPage(['branches', project.key], fetchWithQuery);
 
   const showPinned = defaultBranch !== null && defaultBranch.toLowerCase().includes(query.toLowerCase());
   const rows: BranchRow[] = [
