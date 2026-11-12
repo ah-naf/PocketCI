@@ -1,13 +1,16 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { ConnectionForm } from '../components/ConnectionForm';
 import { ConnectionStatusBanner } from '../components/ConnectionStatusBanner';
+import { ProviderPill } from '../components/ProviderPill';
+import { ProviderSwitchSheet } from '../components/ProviderSwitchSheet';
 import { Screen } from '../components/Screen';
 import { useConnection } from '../hooks/useConnection';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { useProvider } from '../providers/ProviderContext';
+import { useProvider, useProviderSwitch } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Setup'>;
@@ -15,7 +18,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Setup'>;
 export function SetupScreen({ navigation }: Props) {
   const { tw } = useTheme();
   const provider = useProvider();
+  const { providers, switchTo } = useProviderSwitch();
   const connection = useConnection();
+  const [switchOpen, setSwitchOpen] = useState(false);
 
   async function testAndContinue() {
     if (!(await connection.test())) return;
@@ -34,7 +39,7 @@ export function SetupScreen({ navigation }: Props) {
             </AppText>
             ci
           </AppText>
-          <AppText variant="label">Setup</AppText>
+          <ProviderPill label={provider.displayName} onPress={() => setSwitchOpen(true)} />
         </View>
         <View style={tw`gap-3 pb-7 pt-8`}>
           <AppText variant="display" style={tw`text-[34px] leading-[38px]`}>
@@ -66,6 +71,16 @@ export function SetupScreen({ navigation }: Props) {
           </AppText>
         </View>
       </View>
+      <ProviderSwitchSheet
+        visible={switchOpen}
+        options={providers.map(({ id, displayName }) => ({ id, displayName }))}
+        active={provider.id}
+        onSelect={(id) => {
+          setSwitchOpen(false);
+          switchTo(id);
+        }}
+        onClose={() => setSwitchOpen(false)}
+      />
     </Screen>
   );
 }

@@ -22,6 +22,7 @@ export function useConnection() {
 
   useEffect(() => {
     setAccount(null);
+    setStatus({ kind: 'idle' });
     loadCredentials(provider.id, defaultBaseUrl).then((credentials) => {
       setBaseUrl(credentials.baseUrl);
       setToken(credentials.token);

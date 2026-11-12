@@ -29,7 +29,7 @@ function AppContent() {
 
   return (
     <>
-      <RootNavigator initialRouteName={hasToken ? 'Projects' : 'Setup'} />
+      <RootNavigator initialRouteName={hasToken ? 'Projects' : 'Welcome'} />
       <StatusBar style="auto" />
     </>
   );
