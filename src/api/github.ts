@@ -167,7 +167,7 @@ export type GithubPullSummary = {
   number: number;
   title: string;
   user: GithubUser | null;
-  head: { ref: string };
+  head: { ref: string; sha: string };
   base: { ref: string };
   state: string;
   merged_at: string | null;
@@ -217,6 +217,15 @@ export async function fetchPulls(
     next = result.nextPage;
   }
   return { items, nextPage: next };
+}
+
+export async function fetchCanPush(fullName: string) {
+  const repo = await githubGetJson<{ permissions?: { push?: boolean } }>(`/repos/${fullName}`);
+  return repo.permissions?.push === true;
+}
+
+export async function mergePull(fullName: string, number: string, sha: string) {
+  await githubRequest(`/repos/${fullName}/pulls/${number}/merge`, { method: 'PUT', body: { sha, merge_method: 'merge' } });
 }
 
 export function fetchPull(fullName: string, number: string) {

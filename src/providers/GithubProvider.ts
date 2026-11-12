@@ -10,10 +10,12 @@ import {
   fetchRunArtifacts,
   fetchRunJob,
   fetchRunJobs,
+  fetchCanPush,
   fetchPull,
   fetchPullComments,
   fetchPullReviews,
   fetchPulls,
+  mergePull,
   fetchRuns,
   fetchWorkflowFiles,
   fetchWorkflowRuns,
@@ -26,6 +28,8 @@ import {
   type GithubReview,
   type GithubRun,
 } from '../api/github';
+import { BRANCH_CHANGED, TOKEN_CANNOT_MERGE, toMergeError } from '../api/mergeErrors';
+import { queryClient } from './QueryProvider';
 import { fetchGithubUser, getStoredToken, GITHUB_API, githubRequest } from '../api/githubClient';
 import { ApiError } from '../api/errors';
 import { parseWorkflowTarget } from '../api/githubWorkflows';
@@ -311,7 +315,15 @@ export class GithubProvider extends CiProvider {
   }
 
   async getChangeRequest(project: ProjectRef, id: string) {
-    const [first, reviews] = await Promise.all([fetchPull(project.key, id), fetchPullReviews(project.key, id)]);
+    const [first, reviews, canPush] = await Promise.all([
+      fetchPull(project.key, id),
+      fetchPullReviews(project.key, id),
+      queryClient.fetchQuery({
+        queryKey: ['github', 'canPush', project.key],
+        queryFn: () => fetchCanPush(project.key),
+        staleTime: 5 * 60_000,
+      }),
+    ]);
     // GitHub computes mergeability lazily, so mergeable is null on the first read
     let pull = first;
     if (pull.mergeable === null && pull.state === 'open') {
@@ -325,7 +337,17 @@ export class GithubProvider extends CiProvider {
       webUrl: pull.html_url,
       approval: reduceReviews(reviews),
       blockedReason: summary.state === 'open' ? (BLOCKED_REASON[pull.mergeable_state] ?? null) : null,
+      canMerge: summary.state === 'open' && !summary.draft && canPush,
+      headSha: pull.head.sha,
     };
+  }
+
+  async mergeChangeRequest(project: ProjectRef, id: string, headSha: string) {
+    try {
+      await mergePull(project.key, id, headSha);
+    } catch (error) {
+      throw toMergeError(error, { 401: TOKEN_CANNOT_MERGE, 403: TOKEN_CANNOT_MERGE, 409: BRANCH_CHANGED });
+    }
   }
 
   async listChangeRequestComments(project: ProjectRef, id: string) {
