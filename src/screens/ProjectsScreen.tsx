@@ -11,7 +11,6 @@ import { SearchList } from '../components/SearchList';
 import { SectionHeader } from '../components/SectionHeader';
 import { useFavoriteProjects } from '../hooks/useFavoriteProjects';
 import { useFavoriteRuns } from '../hooks/useFavoriteRuns';
-import { useProviderHost } from '../hooks/useProviderHost';
 import { useRecentProjects } from '../hooks/useRecentProjects';
 import { useSearchPage } from '../hooks/useSearchPage';
 import { useThemeToggle } from '../hooks/useThemeToggle';
@@ -32,7 +31,6 @@ export function ProjectsScreen({ navigation }: Props) {
   const provider = useProvider();
   const { providers, switchTo } = useProviderSwitch();
   const plural = provider.labels.projects.toLowerCase();
-  const host = useProviderHost();
   const recent = useRecentProjects(provider.id);
   const { favorites, toggle: toggleFavorite } = useFavoriteProjects(provider.id);
   const { activeCount } = useFavoriteRuns(favorites);
@@ -83,9 +81,7 @@ export function ProjectsScreen({ navigation }: Props) {
     <Screen>
       <View style={tw`min-h-14 flex-row items-center gap-2 border-b border-line pl-4 pr-1`}>
         <ProviderPill providerId={provider.id} label={provider.displayName} onPress={() => setSwitchOpen(true)} />
-        <AppText variant="small" mono numberOfLines={1} style={tw`flex-1 text-xs`}>
-          {host}
-        </AppText>
+        <View style={tw`flex-1`} />
         <IconButton
           icon={themeToggle.nextScheme === 'light' ? 'sun' : 'moon'}
           label={`Switch to ${themeToggle.nextScheme} theme`}
