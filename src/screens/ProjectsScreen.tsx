@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { IconButton } from '../components/IconButton';
 import { ListRow } from '../components/ListRow';
@@ -10,6 +10,7 @@ import { Screen } from '../components/Screen';
 import { SearchList } from '../components/SearchList';
 import { SectionHeader } from '../components/SectionHeader';
 import { useFavoriteProjects } from '../hooks/useFavoriteProjects';
+import { useFavoriteRuns } from '../hooks/useFavoriteRuns';
 import { useProviderHost } from '../hooks/useProviderHost';
 import { useRecentProjects } from '../hooks/useRecentProjects';
 import { useSearchPage } from '../hooks/useSearchPage';
@@ -17,6 +18,7 @@ import { useThemeToggle } from '../hooks/useThemeToggle';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider, useProviderSwitch } from '../providers/ProviderContext';
 import type { ProjectRef, ProviderId } from '../providers/types';
+import { MAX_FOLLOWED_PROJECTS } from '../storage/favoriteProjects';
 import { rememberProject } from '../storage/recentProjects';
 import { useTheme } from '../theme';
 
@@ -32,6 +34,7 @@ export function ProjectsScreen({ navigation }: Props) {
   const host = useProviderHost();
   const recent = useRecentProjects(provider.id);
   const { favorites, toggle: toggleFavorite } = useFavoriteProjects(provider.id);
+  const { anyActive } = useFavoriteRuns(favorites);
   const themeToggle = useThemeToggle();
   const [switchOpen, setSwitchOpen] = useState(false);
 
@@ -54,6 +57,12 @@ export function ProjectsScreen({ navigation }: Props) {
     navigation.navigate('Branches', { project });
   }
 
+  async function followProject(project: ProjectRef) {
+    if (!(await toggleFavorite(project))) {
+      Alert.alert('Follow limit reached', `You can follow up to ${MAX_FOLLOWED_PROJECTS} projects. Unfollow one first.`);
+    }
+  }
+
   const renderProject = (project: ProjectRef) => (
     <ListRow
       key={project.key}
@@ -62,7 +71,7 @@ export function ProjectsScreen({ navigation }: Props) {
       tag={project.key === project.path ? undefined : project.key}
       onPress={() => openProject(project)}
       favorite={favorites.some(({ key }) => key === project.key)}
-      onToggleFavorite={() => toggleFavorite(project)}
+      onToggleFavorite={() => followProject(project)}
     />
   );
 
@@ -80,7 +89,12 @@ export function ProjectsScreen({ navigation }: Props) {
           label={`Switch to ${themeToggle.nextScheme} theme`}
           onPress={themeToggle.toggle}
         />
-        <IconButton icon="star" label="Favorites dashboard" onPress={() => navigation.navigate('Dashboard')} />
+        <IconButton
+          icon="pulse"
+          label={anyActive ? 'Followed projects, a run is active' : 'Followed projects'}
+          pulsing={anyActive}
+          onPress={() => navigation.navigate('Dashboard')}
+        />
         <IconButton icon="sliders" label="Settings" onPress={() => navigation.navigate('Settings')} />
       </View>
       <View style={tw`border-b border-line px-4 pb-3.5 pt-6`}>

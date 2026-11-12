@@ -23,15 +23,15 @@ export function DashboardScreen({ navigation }: Props) {
 
   return (
     <Screen
-      title="Dashboard"
+      title="Following"
       onBack={navigation.goBack}
       scroll
       refreshControl={<AppRefreshControl refreshing={refreshing} onRefresh={reload} />}
     >
       {rows.length === 0 && (
         <EmptyState
-          title="No favorites yet"
-          hint={`Star a ${provider.labels.project.toLowerCase()} on the list to see its latest ${provider.labels.run} here.`}
+          title="Not following anything yet"
+          hint={`Tap the eye on a ${provider.labels.project.toLowerCase()} to follow it and see its latest ${provider.labels.run} here.`}
         />
       )}
       {rows.map((row) => (
@@ -40,7 +40,7 @@ export function DashboardScreen({ navigation }: Props) {
           name={row.project.name}
           detail={row.run?.ref ?? row.project.path}
           status={row.run?.status ?? null}
-          fallback={row.unavailable ? 'Unavailable' : 'No runs'}
+          fallback={row.unavailable ? 'Unavailable' : row.loading ? 'Loading' : 'No runs'}
           ago={row.run ? formatRelativeTime(row.run.createdAt) : ''}
           onPress={() => openFavorite(row)}
         />
