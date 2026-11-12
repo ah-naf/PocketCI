@@ -39,7 +39,7 @@ export function SetupScreen({ navigation }: Props) {
             </AppText>
             ci
           </AppText>
-          <ProviderPill label={provider.displayName} onPress={() => setSwitchOpen(true)} />
+          <ProviderPill providerId={provider.id} label={provider.displayName} onPress={() => setSwitchOpen(true)} />
         </View>
         <View style={tw`gap-3 pb-7 pt-8`}>
           <AppText variant="display" style={tw`text-[34px] leading-[38px]`}>

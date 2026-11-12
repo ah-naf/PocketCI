@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
@@ -5,6 +6,7 @@ import { Icon } from './Icon';
 import { IconButton } from './IconButton';
 
 type Props = {
+  leading?: ReactNode;
   title: string;
   subtitle?: string;
   tag?: string;
@@ -16,7 +18,7 @@ type Props = {
   onToggleFavorite?: () => void;
 };
 
-export function ListRow({ title, subtitle, tag, accentTag, monoTitle, onPress, onLongPress, favorite, onToggleFavorite }: Props) {
+export function ListRow({ leading, title, subtitle, tag, accentTag, monoTitle, onPress, onLongPress, favorite, onToggleFavorite }: Props) {
   const { tw, colors } = useTheme();
   return (
     <Pressable
@@ -29,6 +31,7 @@ export function ListRow({ title, subtitle, tag, accentTag, monoTitle, onPress, o
         subtitle ? 'min-h-[68px] py-3' : 'min-h-[52px] py-2',
       )}
     >
+      {leading}
       <View style={tw`min-w-0 flex-1 gap-0.5`}>
         <AppText
           variant={monoTitle ? 'body' : 'title'}
