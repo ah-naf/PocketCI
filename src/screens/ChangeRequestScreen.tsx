@@ -31,8 +31,8 @@ export function ChangeRequestScreen({ navigation, route }: Props) {
     () => provider.listChangeRequestComments(project, requestId),
     [provider, project, requestId],
   );
-  const request = useAsync(loadRequest);
-  const comments = useAsync(loadComments);
+  const request = useAsync(['changeRequest', project.key, requestId], loadRequest, { staleTimeMs: 30_000 });
+  const comments = useAsync(['changeRequestComments', project.key, requestId], loadComments, { staleTimeMs: 30_000 });
   const data = request.data;
   const state = data && stateBadge(data.state, data.draft);
   const review = data && approvalBadge(data.approval);

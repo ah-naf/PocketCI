@@ -46,7 +46,10 @@ export function JobLogScreen({ navigation, route }: Props) {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   const loadJob = useCallback(() => provider.getJob(project, jobId), [provider, project, jobId]);
-  const job = useAsync(loadJob);
+  const job = useAsync(['job', project.key, jobId], loadJob, {
+    staleTimeMs: 0,
+    refetchIntervalMs: (data) => (isJobActive(data?.status ?? initialStatus) ? POLL_INTERVAL_MS : false),
+  });
   const log = useJobLog(project, jobId);
   const scroll = useAutoScroll();
 
@@ -55,7 +58,6 @@ export function JobLogScreen({ navigation, route }: Props) {
   const now = useNow(live);
   usePoll(
     () => {
-      job.poll();
       if (provider.capabilities.liveLogs) log.poll();
     },
     POLL_INTERVAL_MS,

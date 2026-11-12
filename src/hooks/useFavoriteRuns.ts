@@ -24,7 +24,7 @@ export function useFavoriteRuns(favorites: ProjectRef[]) {
       ),
     [provider, favorites],
   );
-  const { data, reload, refreshing } = useAsync(load);
+  const { data, reload, refreshing } = useAsync(['favoriteRuns', ...favorites.map((project) => project.key)], load);
 
   const rows = useMemo(() => [...(data ?? [])].sort((a, b) => rankOf(a) - rankOf(b)), [data]);
   return { rows, reload, refreshing };

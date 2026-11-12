@@ -40,6 +40,8 @@ export function describeError(error: unknown, service = 'GitLab'): FriendlyError
       };
     case 403:
       return { title: 'Permission denied', message: error.message, detail };
+    case 429:
+      return { title: 'Rate limit reached', message: error.message, detail };
     case 404:
       return {
         title: 'Not found',

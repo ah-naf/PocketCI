@@ -1,73 +1,67 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
+import { useProvider } from '../providers/ProviderContext';
 import type { Page } from '../providers/types';
 
 export type Busy = 'initial' | 'refresh' | 'more' | 'idle';
 
-type State<T> = { items: T[]; nextPage: number | null; busy: Busy; error: unknown };
+type Options<T> = { staleTimeMs?: number; refetchIntervalMs?: (items: T[]) => number | false };
 
-export function usePaginated<T>(fetchPage: (page: number) => Promise<Page<T>>) {
-  const [state, setState] = useState<State<T>>({ items: [], nextPage: null, busy: 'initial', error: null });
-  const latestRequest = useRef(0);
-  const busyRef = useRef<Busy>('initial');
-  const pagesLoaded = useRef(0);
+export function usePaginated<T>(
+  key: readonly unknown[],
+  fetchPage: (page: number) => Promise<Page<T>>,
+  options: Options<T> = {},
+) {
+  const provider = useProvider();
+  const queryClient = useQueryClient();
+  const focused = useIsFocused();
+  const [refreshing, setRefreshing] = useState(false);
+  const queryKey = [provider.id, ...key];
 
-  const run = useCallback(
-    async (page: number, busy: Exclude<Busy, 'idle'>) => {
-      const request = ++latestRequest.current;
-      busyRef.current = busy;
-      setState((current) => ({
-        ...current,
-        busy,
-        error: null,
-        items: busy === 'initial' ? [] : current.items,
-      }));
-      try {
-        const result = await fetchPage(page);
-        if (request !== latestRequest.current) return;
-        busyRef.current = 'idle';
-        pagesLoaded.current = page;
-        setState((current) => ({
-          items: page === 1 ? result.items : [...current.items, ...result.items],
-          nextPage: result.nextPage,
-          busy: 'idle',
-          error: null,
-        }));
-      } catch (error) {
-        if (request !== latestRequest.current) return;
-        busyRef.current = 'idle';
-        setState((current) => ({ ...current, busy: 'idle', error }));
-      }
+  const query = useInfiniteQuery({
+    queryKey,
+    queryFn: ({ pageParam }) => fetchPage(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (last) => last.nextPage ?? undefined,
+    staleTime: options.staleTimeMs,
+    refetchInterval: (current) => {
+      const pages = current.state.data?.pages ?? [];
+      if (!focused || pages.length > 1) return false;
+      return options.refetchIntervalMs?.(pages.flatMap((page) => page.items)) ?? false;
     },
-    [fetchPage],
-  );
+  });
+  const { refetch, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } = query;
 
-  useEffect(() => {
-    run(1, 'initial');
-  }, [run]);
-
-  const refresh = useCallback(() => run(1, 'refresh'), [run]);
+  // Refetching an infinite query reloads every loaded page; keep only page 1 so one request is sent.
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      queryClient.setQueryData<InfiniteData<Page<T>, number>>(queryKey, (data) =>
+        data && { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) },
+      );
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   const loadMore = useCallback(() => {
-    if (state.nextPage && state.busy === 'idle') run(state.nextPage, 'more');
-  }, [run, state.nextPage, state.busy]);
+    if (hasNextPage && !isFetching) fetchNextPage();
+  }, [hasNextPage, isFetching, fetchNextPage]);
 
-  const poll = useCallback(async () => {
-    if (busyRef.current !== 'idle' || pagesLoaded.current !== 1) return;
-    const marker = latestRequest.current;
-    try {
-      const result = await fetchPage(1);
-      if (marker !== latestRequest.current) return;
-      setState((current) => ({ ...current, items: result.items, nextPage: result.nextPage }));
-    } catch {
-      // A failed background refresh is ignored, the next tick tries again.
-    }
-  }, [fetchPage]);
+  const poll = useCallback(() => {
+    if (!isFetching && (query.data?.pages.length ?? 0) <= 1) refetch();
+  }, [isFetching, query.data, refetch]);
+
+  const busy: Busy = query.isLoading ? 'initial' : refreshing ? 'refresh' : isFetchingNextPage ? 'more' : 'idle';
+  const failure = query.error && !query.data ? query.error : null;
 
   return {
-    items: state.items,
-    busy: state.busy,
-    error: state.error,
-    hasMore: state.nextPage !== null,
+    items: query.data?.pages.flatMap((page) => page.items) ?? [],
+    busy,
+    error: failure,
+    hasMore: hasNextPage,
     refresh,
     loadMore,
     poll,

@@ -1,4 +1,3 @@
-import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
 import { FlatList } from 'react-native';
 import { AppRefreshControl } from '../components/AppRefreshControl';
@@ -8,7 +7,6 @@ import { FilterChips } from '../components/FilterChips';
 import { LoadingRow } from '../components/LoadingRow';
 import { PipelineRow } from '../components/PipelineRow';
 import { usePaginated } from '../hooks/usePaginated';
-import { usePoll } from '../hooks/usePoll';
 import { useProvider } from '../providers/ProviderContext';
 import type { ProjectRef, RunFilter } from '../providers/types';
 import { useTheme } from '../theme';
@@ -22,16 +20,16 @@ const POLL_INTERVAL_MS = 5000;
 export function LatestRuns({ project, onOpenRun }: Props) {
   const { tw } = useTheme();
   const provider = useProvider();
-  const focused = useIsFocused();
   const [filter, setFilter] = useState<RunFilter>('all');
 
   const fetchPage = useCallback(
     (page: number) => provider.listRuns(project, null, filter, page),
     [provider, project, filter],
   );
-  const runs = usePaginated(fetchPage);
-  const hasActiveRun = runs.items.some((item) => isPipelineActive(item.status));
-  usePoll(runs.poll, POLL_INTERVAL_MS, focused && hasActiveRun);
+  const runs = usePaginated(['runs', project.key, null, filter], fetchPage, {
+    staleTimeMs: 0,
+    refetchIntervalMs: (items) => (items.some((item) => isPipelineActive(item.status)) ? POLL_INTERVAL_MS : false),
+  });
 
   const filterLabel = RUN_FILTERS.find((option) => option.id === filter)?.label.toLowerCase();
 
