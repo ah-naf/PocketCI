@@ -9,6 +9,7 @@ import { Button } from '../components/Button';
 import { CommentCard } from '../components/CommentCard';
 import { ErrorView } from '../components/ErrorView';
 import { LoadingRow } from '../components/LoadingRow';
+import { Markdown } from '../components/Markdown';
 import { Screen } from '../components/Screen';
 import { StatusBadge } from '../components/StatusBadge';
 import { useAsync } from '../hooks/useAsync';
@@ -83,7 +84,7 @@ export function ChangeRequestScreen({ navigation, route }: Props) {
           <View style={tw`gap-2`}>
             <AppText variant="label">Description</AppText>
             {data.description ? (
-              <AppText selectable>{data.description}</AppText>
+              <Markdown>{data.description}</Markdown>
             ) : (
               <AppText variant="small">No description.</AppText>
             )}
