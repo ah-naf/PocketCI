@@ -15,7 +15,7 @@ Features:
 - Open merge requests (GitLab) and pull requests (GitHub): description, comments, and approval state
 - Merge a merge request or pull request from its screen when your token's user is allowed to. It merges the commit you saw, so a push made after you opened the screen is rejected. Branch protection can still refuse a merge, and the provider's reason is shown
 - Responses are cached in memory to stay under API rate limits; pull to refresh always reloads
-- Follow up to 10 projects with the eye icon. The pulse icon in the header opens their latest runs and pulses while one is running; running projects are polled every 20 seconds and the rest every 2 minutes
+- Follow up to 10 projects with the eye icon. The pulse icon in the header opens their latest runs and pulses while one is running; running projects are polled every 20 seconds and the rest every 2 minutes. In Settings you can show up to 5 runs per project and change the refresh time (minimum 10 seconds)
 
 ## Requirements
 
