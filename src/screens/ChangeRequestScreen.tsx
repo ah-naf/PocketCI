@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 import { Linking, View } from 'react-native';
 import { AppRefreshControl } from '../components/AppRefreshControl';
 import { AppText } from '../components/AppText';
@@ -7,17 +8,20 @@ import { Avatar } from '../components/Avatar';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { CommentCard } from '../components/CommentCard';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorView } from '../components/ErrorView';
 import { LoadingRow } from '../components/LoadingRow';
 import { Markdown } from '../components/Markdown';
 import { Screen } from '../components/Screen';
 import { StatusBadge } from '../components/StatusBadge';
+import { describeError } from '../api/errors';
 import { useAsync } from '../hooks/useAsync';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
 import { approvalBadge, approvalSummary, stateBadge } from '../utils/changeRequestStatus';
 import { formatRelativeTime } from '../utils/format';
+import { errorHaptic, successHaptic, tapHaptic } from '../utils/haptics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChangeRequest'>;
 
@@ -37,6 +41,30 @@ export function ChangeRequestScreen({ navigation, route }: Props) {
   const data = request.data;
   const state = data && stateBadge(data.state, data.draft);
   const review = data && approvalBadge(data.approval);
+  const queryClient = useQueryClient();
+  const [merging, setMerging] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeNotice, setMergeNotice] = useState<{ variant: 'success' | 'failed'; text: string }>();
+
+  async function merge(headSha: string) {
+    tapHaptic();
+    setMerging(true);
+    setMergeNotice(undefined);
+    try {
+      await provider.mergeChangeRequest(project, requestId, headSha);
+      successHaptic();
+      setMergeNotice({ variant: 'success', text: 'Merged' });
+    } catch (error) {
+      errorHaptic();
+      setMergeNotice({ variant: 'failed', text: describeError(error, provider.displayName).message });
+    } finally {
+      setMerging(false);
+      setMergeOpen(false);
+      queryClient.invalidateQueries({ queryKey: [provider.id, 'changeRequests', project.key] });
+      request.reload();
+      comments.reload();
+    }
+  }
 
   return (
     <Screen
@@ -107,8 +135,48 @@ export function ChangeRequestScreen({ navigation, route }: Props) {
             ))}
           </View>
 
+          {mergeNotice && <Banner variant={mergeNotice.variant} title={mergeNotice.text} />}
+          {data.canMerge && (
+            <Button
+              variant="primary"
+              label="Merge"
+              loading={merging}
+              disabled={data.blockedReason !== null}
+              onPress={() => setMergeOpen(true)}
+            />
+          )}
           <Button variant="ghost" label={`Open in ${provider.displayName}`} onPress={() => Linking.openURL(data.webUrl)} />
         </View>
+      )}
+      {data && (
+        <ConfirmDialog
+          visible={mergeOpen}
+          title={`Merge #${requestId}?`}
+          message={`This merges into ${data.targetBranch} on ${provider.displayName}. It can't be undone from the app.`}
+          confirmLabel="Merge"
+          submitting={merging}
+          onConfirm={() => merge(data.headSha)}
+          onCancel={() => !merging && setMergeOpen(false)}
+        >
+          <View style={tw`gap-2.5`}>
+            <View>
+              <AppText variant="label">Title</AppText>
+              <AppText style={tw`text-sm`}>{data.title}</AppText>
+            </View>
+            <View>
+              <AppText variant="label">Branch</AppText>
+              <AppText mono style={tw`text-sm`}>
+                {data.sourceBranch} into {data.targetBranch}
+              </AppText>
+            </View>
+            <View>
+              <AppText variant="label">Commit</AppText>
+              <AppText mono style={tw`text-sm`}>
+                {data.headSha.slice(0, 8)}
+              </AppText>
+            </View>
+          </View>
+        </ConfirmDialog>
       )}
     </Screen>
   );

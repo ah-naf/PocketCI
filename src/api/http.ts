@@ -10,7 +10,7 @@ export function buildQuery(params: Record<string, string | number | undefined>) 
 }
 
 export type HttpRequest = {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PUT';
   headers?: Record<string, string>;
   body?: unknown;
 };

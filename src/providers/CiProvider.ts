@@ -66,6 +66,7 @@ export abstract class CiProvider {
   ): Promise<Page<ChangeRequestSummary>>;
   abstract getChangeRequest(project: ProjectRef, id: string): Promise<ChangeRequest>;
   abstract listChangeRequestComments(project: ProjectRef, id: string): Promise<ChangeRequestComment[]>;
+  abstract mergeChangeRequest(project: ProjectRef, id: string, headSha: string): Promise<void>;
 
   abstract cancelRun(project: ProjectRef, runId: string): Promise<void>;
 
