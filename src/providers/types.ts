@@ -70,7 +70,7 @@ export type RunVariable = { key: string; value: string };
 
 export type LogChunk = { text: string; cursor: string | null; replace: boolean };
 
-export type Credentials = { baseUrl: string; token: string };
+export type Credentials = { baseUrl: string; token: string; oauth?: boolean };
 
 export type Account = { username: string; name: string | null; avatarUrl: string | null };
 
