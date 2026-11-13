@@ -100,6 +100,15 @@ on:
 
 `choice` and `boolean` inputs get a picker, everything else is a text field. GitHub accepts at most 25 inputs per run.
 
+## Settings backup (Firebase)
+
+Followed projects, recent projects, follow settings and the theme are saved to Cloud Firestore (project `pocketci-677fa`) so a reinstall keeps them. Tokens are never saved there.
+
+- Document id: `github_<username>` or `gitlab_<host>_<username>` (lowercase), in the `users` collection.
+- The app uses the public web API key and the Firestore REST API. The service-account JSON is never used by the app and must not be committed.
+- Firestore rules allow only `get`, `create` and `update` on `users/{id}` (fields `data` and `updatedAt`, `data` under 20000 characters). There is no Firebase Auth, so anyone who knows an id can read or change that backup. Keep nothing secret in it.
+- The backup is written when the app goes to the background. After login the app restores it when this device never synced the account or the saved copy is newer.
+
 ## Project structure
 
 ```

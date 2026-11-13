@@ -17,6 +17,11 @@ export async function loadRecentProjects(providerId: ProviderId): Promise<Projec
   return raw ? (JSON.parse(raw) as StoredProject[]).map(toProjectRef) : [];
 }
 
+export async function saveRecentProjects(providerId: ProviderId, projects: ProjectRef[]) {
+  await AsyncStorage.setItem(keyFor(providerId), JSON.stringify(projects));
+  if (providerId === 'gitlab') await AsyncStorage.removeItem(LEGACY_KEY);
+}
+
 export async function clearRecentProjects(providerId: ProviderId) {
   await AsyncStorage.removeItem(keyFor(providerId));
   if (providerId === 'gitlab') await AsyncStorage.removeItem(LEGACY_KEY);
@@ -25,6 +30,5 @@ export async function clearRecentProjects(providerId: ProviderId) {
 export async function rememberProject(project: ProjectRef) {
   const recent = await loadRecentProjects(project.providerId);
   const next = [project, ...recent.filter(({ key }) => key !== project.key)].slice(0, MAX_RECENT);
-  await AsyncStorage.setItem(keyFor(project.providerId), JSON.stringify(next));
-  if (project.providerId === 'gitlab') await AsyncStorage.removeItem(LEGACY_KEY);
+  await saveRecentProjects(project.providerId, next);
 }
