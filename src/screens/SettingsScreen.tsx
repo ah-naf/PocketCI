@@ -9,7 +9,7 @@ import { Screen } from '../components/Screen';
 import { Stepper } from '../components/Stepper';
 import { useConnection } from '../hooks/useConnection';
 import { useFollowSettings } from '../hooks/useFollowSettings';
-import { useGithubOAuthLogin } from '../hooks/useGithubOAuthLogin';
+import { useOAuthLogin } from '../hooks/useOAuthLogin';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
 import { queryClient } from '../providers/QueryProvider';
@@ -30,7 +30,7 @@ export function SettingsScreen({ navigation }: Props) {
   const provider = useProvider();
   const connection = useConnection();
   const follow = useFollowSettings();
-  const signedInWithGithub = useGithubOAuthLogin() && provider.id === 'github';
+  const signedInWithGithub = useOAuthLogin() && provider.id === 'github';
 
   function confirmRemoveToken() {
     Alert.alert(`Remove ${provider.displayName} token?`, 'The token is deleted from this device. Recent projects stay.', [

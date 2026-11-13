@@ -15,7 +15,7 @@ import { useConnection } from '../hooks/useConnection';
 import { useDeviceLogin } from '../hooks/useDeviceLogin';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider, useProviderSwitch } from '../providers/ProviderContext';
-import { saveGithubOAuthToken } from '../storage/secure';
+import { saveOAuthCredentials } from '../storage/secure';
 import { useTheme } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Setup'>;
@@ -30,7 +30,8 @@ export function SetupScreen({ navigation }: Props) {
   const login = useDeviceLogin({
     flow: GITHUB_DEVICE_FLOW,
     baseUrl: provider.setup.defaultBaseUrl,
-    saveToken: ({ accessToken }) => saveGithubOAuthToken(accessToken),
+    saveToken: ({ accessToken }) =>
+      saveOAuthCredentials('github', { baseUrl: provider.setup.defaultBaseUrl, token: accessToken }),
     onSignedIn: () => navigation.replace('Projects'),
   });
   const showGithubLogin = provider.id === 'github' && !useToken;
