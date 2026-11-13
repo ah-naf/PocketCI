@@ -9,6 +9,7 @@ import { Screen } from '../components/Screen';
 import { Stepper } from '../components/Stepper';
 import { useConnection } from '../hooks/useConnection';
 import { useFollowSettings } from '../hooks/useFollowSettings';
+import { useGithubOAuthLogin } from '../hooks/useGithubOAuthLogin';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
 import { queryClient } from '../providers/QueryProvider';
@@ -29,6 +30,7 @@ export function SettingsScreen({ navigation }: Props) {
   const provider = useProvider();
   const connection = useConnection();
   const follow = useFollowSettings();
+  const signedInWithGithub = useGithubOAuthLogin() && provider.id === 'github';
 
   function confirmRemoveToken() {
     Alert.alert(`Remove ${provider.displayName} token?`, 'The token is deleted from this device. Recent projects stay.', [
@@ -126,7 +128,10 @@ export function SettingsScreen({ navigation }: Props) {
         <View style={tw`mt-auto gap-2.5 border-t border-line px-4 pb-8 pt-4`}>
           <AppText variant="label">Danger zone</AppText>
           <Button variant="danger" label="Remove token" onPress={confirmRemoveToken} />
-          <AppText variant="caption">Deletes the {provider.displayName} token from this device.</AppText>
+          <AppText variant="caption">
+            Deletes the {provider.displayName} token from this device.
+            {signedInWithGithub ? ' Revoke access at github.com/settings/applications.' : ''}
+          </AppText>
         </View>
       </View>
     </Screen>

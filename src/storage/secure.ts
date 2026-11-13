@@ -7,6 +7,7 @@ const KEYS: Record<ProviderId, { token: string; baseUrl?: string }> = {
   gitlab: { token: 'gitlab_token', baseUrl: 'gitlab_base_url' },
   github: { token: 'github_token' },
 };
+const GITHUB_OAUTH_KEY = 'github_oauth';
 
 export async function loadCredentials(providerId: ProviderId, defaultBaseUrl: string): Promise<Credentials> {
   const keys = KEYS[providerId];
@@ -22,9 +23,22 @@ export async function saveCredentials(providerId: ProviderId, { baseUrl, token }
   await Promise.all([
     keys.baseUrl ? SecureStore.setItemAsync(keys.baseUrl, baseUrl) : undefined,
     SecureStore.setItemAsync(keys.token, token),
+    providerId === 'github' ? SecureStore.deleteItemAsync(GITHUB_OAUTH_KEY) : undefined,
   ]);
 }
 
+export async function saveGithubOAuthToken(token: string) {
+  await saveCredentials('github', { baseUrl: '', token });
+  await SecureStore.setItemAsync(GITHUB_OAUTH_KEY, 'true');
+}
+
+export async function isGithubOAuthLogin() {
+  return (await SecureStore.getItemAsync(GITHUB_OAUTH_KEY)) === 'true';
+}
+
 export function deleteToken(providerId: ProviderId) {
-  return SecureStore.deleteItemAsync(KEYS[providerId].token);
+  return Promise.all([
+    SecureStore.deleteItemAsync(KEYS[providerId].token),
+    providerId === 'github' ? SecureStore.deleteItemAsync(GITHUB_OAUTH_KEY) : undefined,
+  ]);
 }

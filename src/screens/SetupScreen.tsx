@@ -5,10 +5,12 @@ import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { ConnectionForm } from '../components/ConnectionForm';
 import { ConnectionStatusBanner } from '../components/ConnectionStatusBanner';
+import { GithubLoginActions } from '../components/GithubLoginActions';
 import { ProviderPill } from '../components/ProviderPill';
 import { ProviderSwitchSheet } from '../components/ProviderSwitchSheet';
 import { Screen } from '../components/Screen';
 import { useConnection } from '../hooks/useConnection';
+import { useGithubLogin } from '../hooks/useGithubLogin';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider, useProviderSwitch } from '../providers/ProviderContext';
 import { useTheme } from '../theme';
@@ -21,6 +23,9 @@ export function SetupScreen({ navigation }: Props) {
   const { providers, switchTo } = useProviderSwitch();
   const connection = useConnection();
   const [switchOpen, setSwitchOpen] = useState(false);
+  const [useToken, setUseToken] = useState(false);
+  const githubLogin = useGithubLogin(() => navigation.replace('Projects'));
+  const showGithubLogin = provider.id === 'github' && !useToken;
 
   async function testAndContinue() {
     if (!(await connection.test())) return;
@@ -46,29 +51,46 @@ export function SetupScreen({ navigation }: Props) {
             Connect your {provider.displayName}
           </AppText>
           <AppText variant="body" tone="muted">
-            Paste a {provider.displayName} personal access token to get started. Nothing else works
-            without it.
+            {showGithubLogin
+              ? 'Sign in on github.com. PocketCI asks for repo and workflow access so it can read and run your workflows. There is no token to copy.'
+              : `Paste a ${provider.displayName} personal access token to get started. Nothing else works without it.`}
           </AppText>
         </View>
-        <ConnectionForm
-          baseUrl={connection.baseUrl}
-          token={connection.token}
-          onChangeBaseUrl={connection.setBaseUrl}
-          onChangeToken={connection.setToken}
-          tokenInvalid={connection.status.kind === 'error'}
-        />
-        <View style={tw`mt-auto gap-3 pt-6`}>
-          <ConnectionStatusBanner status={connection.status} />
-          <Button
-            variant="primary"
-            label="Test and continue"
-            onPress={testAndContinue}
-            disabled={!connection.canSubmit}
-            loading={connection.status.kind === 'testing'}
+        {!showGithubLogin && (
+          <ConnectionForm
+            baseUrl={connection.baseUrl}
+            token={connection.token}
+            onChangeBaseUrl={connection.setBaseUrl}
+            onChangeToken={connection.setToken}
+            tokenInvalid={connection.status.kind === 'error'}
           />
-          <AppText variant="caption" style={tw`text-center`}>
-            You can change both later in Settings.
-          </AppText>
+        )}
+        <View style={tw`mt-auto gap-3 pt-6`}>
+          {showGithubLogin ? (
+            <GithubLoginActions
+              state={githubLogin.state}
+              onLogin={githubLogin.login}
+              onCancel={githubLogin.cancel}
+              onUseToken={() => setUseToken(true)}
+            />
+          ) : (
+            <>
+              <ConnectionStatusBanner status={connection.status} />
+              <Button
+                variant="primary"
+                label="Test and continue"
+                onPress={testAndContinue}
+                disabled={!connection.canSubmit}
+                loading={connection.status.kind === 'testing'}
+              />
+              {provider.id === 'github' && (
+                <Button variant="ghost" label="Sign in with GitHub instead" onPress={() => setUseToken(false)} />
+              )}
+              <AppText variant="caption" style={tw`text-center`}>
+                You can change both later in Settings.
+              </AppText>
+            </>
+          )}
         </View>
       </View>
       <ProviderSwitchSheet
