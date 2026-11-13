@@ -62,6 +62,7 @@ export function useConnection() {
   return {
     account,
     baseUrl,
+    cleanedBaseUrl: cleaned.baseUrl,
     setBaseUrl,
     token,
     setToken,

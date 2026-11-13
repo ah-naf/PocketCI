@@ -13,9 +13,10 @@ type Props = {
   onCancel: () => void;
   onUseToken: () => void;
   footer?: ReactNode;
+  unavailable?: string;
 };
 
-export function LoginActions({ providerName, state, onLogin, onCancel, onUseToken, footer }: Props) {
+export function LoginActions({ providerName, state, onLogin, onCancel, onUseToken, footer, unavailable }: Props) {
   const { tw } = useTheme();
   if (state.kind === 'waiting') {
     return (
@@ -30,12 +31,14 @@ export function LoginActions({ providerName, state, onLogin, onCancel, onUseToke
   const busy = state.kind === 'requesting' || state.kind === 'verifying';
   return (
     <View style={tw`gap-3`}>
+      {unavailable && <Banner variant="manual" title="Not available yet" message={unavailable} />}
       {state.kind === 'error' && <Banner variant="failed" {...state.error} />}
       <Button
         variant="primary"
         label={state.kind === 'verifying' ? 'Signing in' : `Continue with ${providerName}`}
         onPress={onLogin}
         loading={busy}
+        disabled={Boolean(unavailable)}
       />
       <Button variant="ghost" label="Use a token instead" onPress={onUseToken} disabled={busy} />
       {footer}
