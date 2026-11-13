@@ -43,7 +43,7 @@ export function useDeviceLogin({ flow, baseUrl, saveToken, onSignedIn }: Options
       const token = await pollForToken(flow, code, current.signal);
       pendingCode.current = null;
       setState({ kind: 'verifying' });
-      await provider.verifyCredentials({ baseUrl, token: token.accessToken });
+      await provider.verifyCredentials({ baseUrl, token: token.accessToken, oauth: true });
       await saveToken(token);
       queryClient.clear();
       await clearRecentProjects(provider.id);

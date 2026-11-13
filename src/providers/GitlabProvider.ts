@@ -35,6 +35,7 @@ import type {
   ChangeRequestFilter,
   ChangeRequestState,
   ChangeRequestSummary,
+  Credentials,
   Job,
   Notice,
   ProjectRef,
@@ -142,7 +143,7 @@ export class GitlabProvider extends CiProvider {
     tokenHint: 'The token needs the api scope. Create one in GitLab under Preferences → Access tokens.',
   };
 
-  async verifyCredentials(credentials: { baseUrl: string; token: string }) {
+  async verifyCredentials(credentials: Credentials) {
     const user = await fetchCurrentUser(credentials);
     return { username: user.username, name: user.name, avatarUrl: user.avatar_url };
   }
