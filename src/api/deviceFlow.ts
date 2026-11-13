@@ -2,6 +2,8 @@ import { buildQuery, httpRequest } from './http';
 
 const SLOW_DOWN_SECONDS = 5;
 
+export type DeviceToken = { accessToken: string; refreshToken?: string };
+
 export type DeviceFlowConfig = { clientId: string; scope: string; deviceCodeUrl: string; tokenUrl: string };
 
 export type DeviceCode = {
@@ -23,12 +25,17 @@ async function postJson(url: string, params: Record<string, string>) {
   const { text } = await httpRequest(`${url}${buildQuery(params)}`, {
     method: 'POST',
     headers: { Accept: 'application/json' },
+    // GitLab answers a pending authorization with HTTP 400 and an error body
+    acceptErrorStatus: true,
   });
   return JSON.parse(text) as Record<string, unknown>;
 }
 
 export async function requestDeviceCode({ clientId, scope, deviceCodeUrl }: DeviceFlowConfig): Promise<DeviceCode> {
   const data = await postJson(deviceCodeUrl, { client_id: clientId, scope });
+  if (typeof data.device_code !== 'string') {
+    throw new Error(String(data.error_description ?? data.error ?? 'Could not start sign-in'));
+  }
   return {
     deviceCode: String(data.device_code),
     userCode: String(data.user_code),
@@ -53,7 +60,7 @@ function wait(milliseconds: number, signal: AbortSignal) {
   });
 }
 
-export async function pollForToken({ clientId, tokenUrl }: DeviceFlowConfig, code: DeviceCode, signal: AbortSignal): Promise<string> {
+export async function pollForToken({ clientId, tokenUrl }: DeviceFlowConfig, code: DeviceCode, signal: AbortSignal): Promise<DeviceToken> {
   let intervalSeconds = code.intervalSeconds;
   while (Date.now() < code.expiresAt) {
     await wait(intervalSeconds * 1000, signal);
@@ -62,7 +69,9 @@ export async function pollForToken({ clientId, tokenUrl }: DeviceFlowConfig, cod
       device_code: code.deviceCode,
       grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
     });
-    if (typeof data.access_token === 'string') return data.access_token;
+    if (typeof data.access_token === 'string') {
+      return { accessToken: data.access_token, refreshToken: typeof data.refresh_token === 'string' ? data.refresh_token : undefined };
+    }
     switch (data.error) {
       case 'authorization_pending':
         break;

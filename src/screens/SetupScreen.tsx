@@ -30,7 +30,7 @@ export function SetupScreen({ navigation }: Props) {
   const login = useDeviceLogin({
     flow: GITHUB_DEVICE_FLOW,
     baseUrl: provider.setup.defaultBaseUrl,
-    saveToken: saveGithubOAuthToken,
+    saveToken: ({ accessToken }) => saveGithubOAuthToken(accessToken),
     onSignedIn: () => navigation.replace('Projects'),
   });
   const showGithubLogin = provider.id === 'github' && !useToken;

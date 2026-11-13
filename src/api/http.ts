@@ -13,6 +13,7 @@ export type HttpRequest = {
   method?: 'GET' | 'POST' | 'PUT';
   headers?: Record<string, string>;
   body?: unknown;
+  acceptErrorStatus?: boolean;
 };
 
 export type HttpResponse = { text: string; headers: Headers; status: number };
@@ -56,14 +57,14 @@ function isRateLimited(response: Response) {
   return response.status === 429 || (response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0');
 }
 
-export async function httpRequest(url: string, { method = 'GET', headers, body }: HttpRequest = {}): Promise<HttpResponse> {
+export async function httpRequest(url: string, { method = 'GET', headers, body, acceptErrorStatus }: HttpRequest = {}): Promise<HttpResponse> {
   const response = await fetchWithTimeout(url, {
     method,
     headers: { ...(body !== undefined && { 'Content-Type': 'application/json' }), ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await response.text();
-  if (!response.ok) {
+  if (!response.ok && !acceptErrorStatus) {
     if (isRateLimited(response)) throw new ApiError('http', 429, describeRateLimit(response.headers));
     throw new ApiError('http', response.status, readErrorMessage(text, response.statusText));
   }

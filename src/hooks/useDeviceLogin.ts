@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking } from 'react-native';
 import { describeError, type FriendlyError } from '../api/errors';
-import { DeviceFlowError, pollForToken, requestDeviceCode, type DeviceCode, type DeviceFlowConfig } from '../api/deviceFlow';
+import { DeviceFlowError, pollForToken, requestDeviceCode, type DeviceCode, type DeviceFlowConfig, type DeviceToken } from '../api/deviceFlow';
 import { useProvider } from '../providers/ProviderContext';
 import { queryClient } from '../providers/QueryProvider';
 import { clearRecentProjects } from '../storage/recentProjects';
@@ -25,7 +25,7 @@ function describeLoginError(error: unknown, providerName: string): FriendlyError
 type Options = {
   flow: DeviceFlowConfig;
   baseUrl: string;
-  saveToken: (token: string) => Promise<void>;
+  saveToken: (token: DeviceToken) => Promise<void>;
   onSignedIn: () => void;
 };
 
@@ -43,7 +43,7 @@ export function useDeviceLogin({ flow, baseUrl, saveToken, onSignedIn }: Options
       const token = await pollForToken(flow, code, current.signal);
       pendingCode.current = null;
       setState({ kind: 'verifying' });
-      await provider.verifyCredentials({ baseUrl, token });
+      await provider.verifyCredentials({ baseUrl, token: token.accessToken });
       await saveToken(token);
       queryClient.clear();
       await clearRecentProjects(provider.id);
