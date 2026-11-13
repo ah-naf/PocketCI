@@ -10,12 +10,16 @@ export async function loadFavoriteProjects(providerId: ProviderId): Promise<Proj
   return raw ? (JSON.parse(raw) as ProjectRef[]) : [];
 }
 
+export function saveFavoriteProjects(providerId: ProviderId, projects: ProjectRef[]) {
+  return AsyncStorage.setItem(keyFor(providerId), JSON.stringify(projects));
+}
+
 // Returns null when the follow limit blocks adding another project.
 export async function toggleFavoriteProject(project: ProjectRef): Promise<ProjectRef[] | null> {
   const favorites = await loadFavoriteProjects(project.providerId);
   const isFavorite = favorites.some(({ key }) => key === project.key);
   if (!isFavorite && favorites.length >= MAX_FOLLOWED_PROJECTS) return null;
   const next = isFavorite ? favorites.filter(({ key }) => key !== project.key) : [...favorites, project];
-  await AsyncStorage.setItem(keyFor(project.providerId), JSON.stringify(next));
+  await saveFavoriteProjects(project.providerId, next);
   return next;
 }
