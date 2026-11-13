@@ -3,14 +3,14 @@ import { useCallback, useState } from 'react';
 import type { ProjectRef, ProviderId } from '../providers/types';
 import { loadRecentProjects } from '../storage/recentProjects';
 
-export function useRecentProjects(providerId: ProviderId) {
+export function useRecentProjects(providerId: ProviderId, refreshKey = 0) {
   const [recent, setRecent] = useState<ProjectRef[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       setRecent([]);
       loadRecentProjects(providerId).then(setRecent);
-    }, [providerId]),
+    }, [providerId, refreshKey]),
   );
 
   return recent;

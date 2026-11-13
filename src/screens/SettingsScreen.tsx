@@ -132,6 +132,10 @@ export function SettingsScreen({ navigation }: Props) {
             note={`Minimum ${MIN_POLL_SECONDS} seconds. Shorter times use more of your API rate limit. Projects with no active run refresh 6 times slower, at least every minute.`}
             onChange={(pollSeconds) => follow.update({ pollSeconds })}
           />
+          <AppText variant="caption">
+            Followed projects, recent projects, these settings and the theme are backed up to your {provider.displayName}{' '}
+            account when the app goes to the background.
+          </AppText>
         </View>
         <View style={tw`mt-auto gap-2.5 border-t border-line px-4 pb-8 pt-4`}>
           <AppText variant="label">Danger zone</AppText>
