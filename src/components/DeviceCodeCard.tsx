@@ -5,9 +5,9 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
 
-type Props = { code: string; verificationUri: string; onCancel: () => void };
+type Props = { providerName: string; code: string; verificationUri: string; onCancel: () => void };
 
-export function DeviceCodeCard({ code, verificationUri, onCancel }: Props) {
+export function DeviceCodeCard({ providerName, code, verificationUri, onCancel }: Props) {
   const { tw, colors } = useTheme();
   const [copied, setCopied] = useState(false);
 
@@ -20,7 +20,7 @@ export function DeviceCodeCard({ code, verificationUri, onCancel }: Props) {
   return (
     <View style={tw`gap-3`}>
       <View style={tw`items-center gap-2 rounded-2xl border border-line bg-card p-5`}>
-        <AppText variant="label">Enter this code on GitHub</AppText>
+        <AppText variant="label">Enter this code on {providerName}</AppText>
         <AppText mono selectable style={tw`text-[34px] leading-[40px] tracking-widest`}>
           {code}
         </AppText>
@@ -29,7 +29,7 @@ export function DeviceCodeCard({ code, verificationUri, onCancel }: Props) {
           <AppText variant="small">Waiting for approval…</AppText>
         </View>
       </View>
-      <Button variant="primary" label="Open GitHub" onPress={() => Linking.openURL(verificationUri).catch(() => undefined)} />
+      <Button variant="primary" label={`Open ${providerName}`} onPress={() => Linking.openURL(verificationUri).catch(() => undefined)} />
       <Button label={copied ? 'Copied' : 'Copy code'} onPress={copyCode} />
       <Button variant="ghost" label="Cancel" onPress={onCancel} />
     </View>

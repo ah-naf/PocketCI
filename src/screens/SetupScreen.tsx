@@ -1,18 +1,21 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { GITHUB_DEVICE_FLOW } from '../api/githubAuth';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { ConnectionForm } from '../components/ConnectionForm';
 import { ConnectionStatusBanner } from '../components/ConnectionStatusBanner';
-import { GithubLoginActions } from '../components/GithubLoginActions';
+import { GithubOrgHint } from '../components/GithubOrgHint';
+import { LoginActions } from '../components/LoginActions';
 import { ProviderPill } from '../components/ProviderPill';
 import { ProviderSwitchSheet } from '../components/ProviderSwitchSheet';
 import { Screen } from '../components/Screen';
 import { useConnection } from '../hooks/useConnection';
-import { useGithubLogin } from '../hooks/useGithubLogin';
+import { useDeviceLogin } from '../hooks/useDeviceLogin';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider, useProviderSwitch } from '../providers/ProviderContext';
+import { saveGithubOAuthToken } from '../storage/secure';
 import { useTheme } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Setup'>;
@@ -24,7 +27,12 @@ export function SetupScreen({ navigation }: Props) {
   const connection = useConnection();
   const [switchOpen, setSwitchOpen] = useState(false);
   const [useToken, setUseToken] = useState(false);
-  const githubLogin = useGithubLogin(() => navigation.replace('Projects'));
+  const login = useDeviceLogin({
+    flow: GITHUB_DEVICE_FLOW,
+    baseUrl: provider.setup.defaultBaseUrl,
+    saveToken: saveGithubOAuthToken,
+    onSignedIn: () => navigation.replace('Projects'),
+  });
   const showGithubLogin = provider.id === 'github' && !useToken;
 
   async function testAndContinue() {
@@ -67,11 +75,13 @@ export function SetupScreen({ navigation }: Props) {
         )}
         <View style={tw`mt-auto gap-3 pt-6`}>
           {showGithubLogin ? (
-            <GithubLoginActions
-              state={githubLogin.state}
-              onLogin={githubLogin.login}
-              onCancel={githubLogin.cancel}
+            <LoginActions
+              providerName={provider.displayName}
+              state={login.state}
+              onLogin={login.login}
+              onCancel={login.cancel}
               onUseToken={() => setUseToken(true)}
+              footer={<GithubOrgHint />}
             />
           ) : (
             <>
