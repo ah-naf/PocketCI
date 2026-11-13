@@ -1,31 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking } from 'react-native';
 import { describeError, type FriendlyError } from '../api/errors';
-import { DeviceFlowError, pollForToken, requestDeviceCode, type DeviceCode } from '../api/githubAuth';
+import { DeviceFlowError, pollForToken, requestDeviceCode, type DeviceCode, type DeviceFlowConfig, type DeviceToken } from '../api/deviceFlow';
 import { useProvider } from '../providers/ProviderContext';
 import { queryClient } from '../providers/QueryProvider';
 import { clearRecentProjects } from '../storage/recentProjects';
-import { saveGithubOAuthToken } from '../storage/secure';
 
-export type GithubLoginState =
+export type DeviceLoginState =
   | { kind: 'idle' }
   | { kind: 'requesting' }
   | { kind: 'waiting'; code: DeviceCode }
   | { kind: 'verifying' }
   | { kind: 'error'; error: FriendlyError };
 
-function describeLoginError(error: unknown): FriendlyError {
+function describeLoginError(error: unknown, providerName: string): FriendlyError {
   if (error instanceof DeviceFlowError) {
     return error.reason === 'expired'
       ? { title: 'Code expired', message: 'The code was not entered in time. Start again to get a new one.' }
-      : { title: 'Access denied', message: 'Sign-in was cancelled on GitHub. Start again to try once more.' };
+      : { title: 'Access denied', message: `Sign-in was cancelled on ${providerName}. Start again to try once more.` };
   }
-  return describeError(error, 'GitHub');
+  return describeError(error, providerName);
 }
 
-export function useGithubLogin(onSignedIn: () => void) {
+type Options = {
+  flow: DeviceFlowConfig;
+  baseUrl: string;
+  saveToken: (token: DeviceToken) => Promise<void>;
+  onSignedIn: () => void;
+};
+
+export function useDeviceLogin({ flow, baseUrl, saveToken, onSignedIn }: Options) {
   const provider = useProvider();
-  const [state, setState] = useState<GithubLoginState>({ kind: 'idle' });
+  const [state, setState] = useState<DeviceLoginState>({ kind: 'idle' });
   const pendingCode = useRef<DeviceCode | null>(null);
   const controller = useRef<AbortController | null>(null);
 
@@ -34,18 +40,18 @@ export function useGithubLogin(onSignedIn: () => void) {
     const current = new AbortController();
     controller.current = current;
     try {
-      const token = await pollForToken(code, current.signal);
+      const token = await pollForToken(flow, code, current.signal);
       pendingCode.current = null;
       setState({ kind: 'verifying' });
-      await provider.verifyCredentials({ baseUrl: provider.setup.defaultBaseUrl, token });
-      await saveGithubOAuthToken(token);
+      await provider.verifyCredentials({ baseUrl, token: token.accessToken, oauth: true });
+      await saveToken(token);
       queryClient.clear();
       await clearRecentProjects(provider.id);
       onSignedIn();
     } catch (error) {
       if (current.signal.aborted) return;
       pendingCode.current = null;
-      setState({ kind: 'error', error: describeLoginError(error) });
+      setState({ kind: 'error', error: describeLoginError(error, provider.displayName) });
     }
   }
 
@@ -53,13 +59,13 @@ export function useGithubLogin(onSignedIn: () => void) {
     controller.current?.abort();
     setState({ kind: 'requesting' });
     try {
-      const code = await requestDeviceCode();
+      const code = await requestDeviceCode(flow);
       pendingCode.current = code;
       setState({ kind: 'waiting', code });
       Linking.openURL(code.verificationUri).catch(() => undefined);
       poll(code);
     } catch (error) {
-      setState({ kind: 'error', error: describeLoginError(error) });
+      setState({ kind: 'error', error: describeLoginError(error, provider.displayName) });
     }
   }
 

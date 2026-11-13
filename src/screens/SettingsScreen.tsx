@@ -7,11 +7,13 @@ import { ConnectionForm } from '../components/ConnectionForm';
 import { ConnectionStatusBanner } from '../components/ConnectionStatusBanner';
 import { Screen } from '../components/Screen';
 import { Stepper } from '../components/Stepper';
+import { revokeGitlabToken } from '../api/gitlabAuth';
 import { useConnection } from '../hooks/useConnection';
 import { useFollowSettings } from '../hooks/useFollowSettings';
-import { useGithubOAuthLogin } from '../hooks/useGithubOAuthLogin';
+import { useOAuthLogin } from '../hooks/useOAuthLogin';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useProvider } from '../providers/ProviderContext';
+import type { ProviderId } from '../providers/types';
 import { queryClient } from '../providers/QueryProvider';
 import { clearRecentProjects } from '../storage/recentProjects';
 import {
@@ -25,12 +27,17 @@ import { useTheme } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
+const OAUTH_NOTE: Record<ProviderId, string> = {
+  github: ' Revoke access at github.com/settings/applications.',
+  gitlab: ' The token is also revoked on GitLab.',
+};
+
 export function SettingsScreen({ navigation }: Props) {
   const { tw } = useTheme();
   const provider = useProvider();
   const connection = useConnection();
   const follow = useFollowSettings();
-  const signedInWithGithub = useGithubOAuthLogin() && provider.id === 'github';
+  const signedInWithOAuth = useOAuthLogin();
 
   function confirmRemoveToken() {
     Alert.alert(`Remove ${provider.displayName} token?`, 'The token is deleted from this device. Recent projects stay.', [
@@ -39,6 +46,7 @@ export function SettingsScreen({ navigation }: Props) {
         text: 'Remove',
         style: 'destructive',
         onPress: async () => {
+          if (provider.id === 'gitlab') await revokeGitlabToken();
           await deleteToken(provider.id);
           queryClient.clear();
           await clearRecentProjects(provider.id);
@@ -130,7 +138,7 @@ export function SettingsScreen({ navigation }: Props) {
           <Button variant="danger" label="Remove token" onPress={confirmRemoveToken} />
           <AppText variant="caption">
             Deletes the {provider.displayName} token from this device.
-            {signedInWithGithub ? ' Revoke access at github.com/settings/applications.' : ''}
+            {signedInWithOAuth ? OAUTH_NOTE[provider.id] : ''}
           </AppText>
         </View>
       </View>
